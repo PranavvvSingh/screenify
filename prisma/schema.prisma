@@ -1,0 +1,198 @@
+// Prisma schema for Screenify - AI-Powered Candidate Screening Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User table - Handles both recruiters and candidates
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      UserRole @default(CANDIDATE)
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  rolesCreated Role[]      @relation("RecruiterRoles")
+  candidate    Candidate?
+  accounts     Account[]
+  sessions     Session[]
+
+  @@index([email])
+  @@map("users")
+}
+
+enum UserRole {
+  RECRUITER
+  CANDIDATE
+}
+
+// Better Auth Account model
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// Better Auth Session model
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Role table - Job roles created by recruiters
+model Role {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?  @db.Text
+  jdText       String?  @db.Text
+  requirements Json?    // JSONB: { skills: [], experience: "", qualifications: [], responsibilities: [] }
+  recruiterId  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  recruiter   User         @relation("RecruiterRoles", fields: [recruiterId], references: [id], onDelete: Cascade)
+  invitations Invitation[]
+  quizzes     Quiz[]
+
+  @@index([recruiterId])
+  @@index([createdAt])
+  @@map("roles")
+}
+
+// Invitation table - Links for candidates to apply
+model Invitation {
+  id         String    @id @default(cuid())
+  roleId     String
+  token      String    @unique @default(cuid())
+  expiresAt  DateTime?
+  maxUses    Int?      // NULL = unlimited
+  usedCount  Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  role       Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  candidates Candidate[]
+
+  @@index([token])
+  @@index([roleId])
+  @@map("invitations")
+}
+
+// Candidate table - Profile info extracted from resume
+model Candidate {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  invitationId String
+  name         String
+  email        String
+  resumeText   String?  @db.Text
+  profile      Json?    // JSONB: { skills: [], experience: [], education: [], summary: "" }
+  createdAt    DateTime @default(now())
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  quizzes    Quiz[]
+  attempts   Attempt[]
+
+  @@index([userId])
+  @@index([invitationId])
+  @@index([email])
+  @@map("candidates")
+}
+
+// Quiz table - Generated at Role + Candidate conjunction
+model Quiz {
+  id          String   @id @default(cuid())
+  roleId      String
+  candidateId String
+  questions   Json     // JSONB: [{ id, question, options: [], correctAnswer, skill, difficulty }]
+  duration    Int      // Duration in minutes
+  createdAt   DateTime @default(now())
+
+  // Relations
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  attempts  Attempt[]
+
+  @@unique([roleId, candidateId]) // One quiz per role-candidate pair
+  @@index([roleId])
+  @@index([candidateId])
+  @@map("quizzes")
+}
+
+// Attempt table - Single quiz attempt by candidate
+model Attempt {
+  id              String    @id @default(cuid())
+  quizId          String
+  candidateId     String
+  startedAt       DateTime  @default(now())
+  submittedAt     DateTime?
+  responses       Json?     // JSONB: [{ questionId, selectedAnswer, timeTaken }]
+  proctoringFlags Json?     // JSONB: { tabSwitches: 0, visibilityChanges: 0, fullscreenExits: 0, timestamps: [] }
+  isComplete      Boolean   @default(false)
+  status          AttemptStatus @default(IN_PROGRESS)
+
+  // Relations
+  quiz       Quiz        @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  candidate  Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  evaluation Evaluation?
+
+  @@unique([quizId, candidateId]) // Single attempt enforcement
+  @@index([quizId])
+  @@index([candidateId])
+  @@index([status])
+  @@map("attempts")
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  EVALUATED
+  EXPIRED
+}
+
+// Evaluation table - Auto-generated results
+model Evaluation {
+  id              String   @id @default(cuid())
+  attemptId       String   @unique
+  score           Float    // Percentage score (0-100)
+  skillBreakdown  Json     // JSONB: { skill1: { correct: 3, total: 5 }, skill2: {...} }
+  confidenceScore Float    // Confidence metric (0-100)
+  anomalies       Json?    // JSONB: { highRiskFlags: [], mediumRiskFlags: [], notes: "" }
+  createdAt       DateTime @default(now())
+
+  // Relations
+  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([score])
+  @@map("evaluations")
+}

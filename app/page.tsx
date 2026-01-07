@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { SignInButtons } from "@/components/auth/sign-in-buttons";
+import { UserInfo } from "@/components/auth/user-info";
 
 export default function Home() {
   return (
@@ -14,9 +14,14 @@ export default function Home() {
           <p className="text-muted-foreground">AI-Powered Candidate Screening Platform</p>
         </div>
 
-        {/* Demo Components */}
+        {/* Authentication Demo */}
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Card Example 1 */}
+          <SignInButtons />
+          <UserInfo />
+        </div>
+
+        {/* Theme Demo */}
+        <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Theme Preview</CardTitle>
@@ -37,53 +42,34 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          {/* Card Example 2 */}
+          {/* Color Palette Display */}
           <Card>
             <CardHeader>
-              <CardTitle>User Information</CardTitle>
-              <CardDescription>Please fill in your details below</CardDescription>
+              <CardTitle>Color Palette</CardTitle>
+              <CardDescription>Indigo theme colors in action</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="Enter your name" />
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="h-20 rounded-lg bg-primary"></div>
+                  <p className="text-sm text-muted-foreground">Primary</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-20 rounded-lg bg-secondary"></div>
+                  <p className="text-sm text-muted-foreground">Secondary</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-20 rounded-lg bg-accent"></div>
+                  <p className="text-sm text-muted-foreground">Accent</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-20 rounded-lg bg-muted"></div>
+                  <p className="text-sm text-muted-foreground">Muted</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="Enter your email" />
-              </div>
-              <Button className="w-full">Submit</Button>
             </CardContent>
           </Card>
         </div>
-
-        {/* Color Palette Display */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Color Palette</CardTitle>
-            <CardDescription>Indigo theme colors in action</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <div className="h-20 rounded-lg bg-primary"></div>
-                <p className="text-sm text-muted-foreground">Primary</p>
-              </div>
-              <div className="space-y-2">
-                <div className="h-20 rounded-lg bg-secondary"></div>
-                <p className="text-sm text-muted-foreground">Secondary</p>
-              </div>
-              <div className="space-y-2">
-                <div className="h-20 rounded-lg bg-accent"></div>
-                <p className="text-sm text-muted-foreground">Accent</p>
-              </div>
-              <div className="space-y-2">
-                <div className="h-20 rounded-lg bg-muted"></div>
-                <p className="text-sm text-muted-foreground">Muted</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

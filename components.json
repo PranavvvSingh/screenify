@@ -1,6 +1,6 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "base-maia",
+  "style": "radix-maia",
   "rsc": true,
   "tsx": true,
   "tailwind": {
@@ -10,18 +10,18 @@
     "cssVariables": true,
     "prefix": ""
   },
-  "theme": "indigo",
-  "iconLibrary": "hugeicons",
-  "font": "roboto",
-  "menuAccent": "subtle",
-  "menuColor": "default",
-  "radius": 0.5,
+  "theme": {
+    "baseColor": "gray",
+    "primary": "indigo",
+    "fontFamily": {
+      "sans": "Roboto, sans-serif"
+    }
+  },
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",
     "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
-  },
-  "registries": {}
+  }
 }

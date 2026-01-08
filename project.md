@@ -183,7 +183,7 @@ Output:
 
 | Component | Current | New |
 |-----------|---------|-----|
-| **Auth** | GitHub OAuth | GitHub/Google OAuth (NextAuth) |
+| **Auth** | GitHub OAuth | Google OAuth (Better Auth) |
 | **User Model** | Single type | RBAC: Recruiter / Candidate |
 | **AI Provider** | N/A | **Ollama Cloud API (gpt-oss:120b-cloud)** with API key |
 | **AI - Doc Parse** | N/A | Ollama Cloud (text → structured JSON) |
@@ -669,7 +669,7 @@ POST   /api/quiz/submit                   Submit responses + proctoring flags
 
 ### Shared
 ```
-POST   /api/auth/[...nextauth]            OAuth (GitHub/Google)
+POST   /api/auth/[...all]                 OAuth (Google)
 GET    /api/user/me                       Current user profile
 ```
 
@@ -702,7 +702,7 @@ GET    /api/user/me                       Current user profile
 ## Security & Data Protection
 
 ### Authentication
-- OAuth (GitHub/Google) via NextAuth
+- OAuth (Google) via Better Auth
 - Role-based access control (RBAC)
 - Invitation tokens (UUID, single-use or time-limited)
 

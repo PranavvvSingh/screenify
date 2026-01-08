@@ -5,7 +5,7 @@ AI-powered candidate screening platform with candidate-specific quiz generation 
 
 ## Key Decisions Made
 - ✅ **Frontend**: shadcn/ui for all UI components
-- ✅ **Authentication**: Better Auth with OAuth for both recruiters AND candidates (Google/GitHub)
+- ✅ **Authentication**: Better Auth with Google OAuth for both recruiters AND candidates
 - ✅ **No Email Service**: Email notifications not implemented in MVP
 - ✅ **No Testing**: Skip testing setup for now
 - ✅ **Environment Variables**: Used throughout the application
@@ -174,12 +174,10 @@ enum UserRole {
 - [ ] Create `lib/auth.ts` with Better Auth configuration
 - [ ] Install Better Auth adapter: `npm install better-auth-prisma`
 - [ ] Configure Better Auth with:
-  - GitHub OAuth Provider
   - Google OAuth Provider
   - Prisma adapter for database
   - Custom user metadata for role (RECRUITER/CANDIDATE)
 - [ ] Create API route handler `app/api/auth/[...all]/route.ts`
-- [ ] Create GitHub OAuth App (get CLIENT_ID and CLIENT_SECRET)
 - [ ] Create Google OAuth App (get CLIENT_ID and CLIENT_SECRET)
 - [ ] Create auth client `lib/auth-client.ts` for frontend hooks
 - [ ] Create custom sign-in page at `app/auth/signin/page.tsx`
@@ -187,8 +185,7 @@ enum UserRole {
 - [ ] Create middleware for route protection
 
 **Verification Checklist**:
-- [ ] Navigate to `/auth/signin` shows OAuth options (GitHub, Google)
-- [ ] GitHub OAuth login works and creates user in database
+- [ ] Navigate to `/auth/signin` shows Google OAuth option
 - [ ] Google OAuth login works and creates user in database
 - [ ] User created with selected role (RECRUITER or CANDIDATE)
 - [ ] Session includes user role and metadata
@@ -207,8 +204,6 @@ enum UserRole {
 **Environment Variables Added**:
 - `BETTER_AUTH_SECRET` (generate with `openssl rand -base64 32`)
 - `BETTER_AUTH_URL` (http://localhost:3000 for dev)
-- `GITHUB_CLIENT_ID`
-- `GITHUB_CLIENT_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 
@@ -226,10 +221,6 @@ export const auth = betterAuth({
     enabled: false // OAuth only
   },
   socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!
-    },
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!
@@ -273,9 +264,7 @@ DATABASE_URL="postgresql://..."
 BETTER_AUTH_SECRET="generate-with-openssl-rand-base64-32"
 BETTER_AUTH_URL="http://localhost:3000"
 
-# OAuth Providers
-GITHUB_CLIENT_ID=""
-GITHUB_CLIENT_SECRET=""
+# OAuth Provider - Google
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
 
@@ -1339,7 +1328,7 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 | **Styling** | Tailwind CSS + shadcn/ui |
 | **Database** | PostgreSQL (Supabase/Neon/Vercel) |
 | **ORM** | Prisma |
-| **Authentication** | Better Auth (GitHub + Google OAuth) |
+| **Authentication** | Better Auth (Google OAuth) |
 | **AI Provider** | Ollama Cloud API (gpt-oss:120b-cloud) |
 | **PDF Processing** | pdf.js (client-side) |
 | **Charts** | Recharts |

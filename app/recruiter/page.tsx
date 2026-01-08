@@ -11,7 +11,7 @@ export default function RecruiterDashboard() {
           <p className="text-muted-foreground mt-2">Manage your job roles and candidates</p>
         </div>
         <Link href="/recruiter/roles/new">
-          <Button size="lg">Create New Role</Button>
+          <Button size="lg">Create New Job Role</Button>
         </Link>
       </div>
 

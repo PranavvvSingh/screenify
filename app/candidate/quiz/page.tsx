@@ -7,17 +7,9 @@ import { Badge } from "@/components/ui/badge";
 export default function QuizPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Technical Assessment</h1>
-          <p className="text-muted-foreground mt-1">Question 1 of 20</p>
-        </div>
-        <Card className="px-4 py-2">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-primary">45:00</p>
-            <p className="text-xs text-muted-foreground">Time Remaining</p>
-          </div>
-        </Card>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-foreground">Technical Assessment</h1>
+        <p className="text-muted-foreground">Question 1 of 20</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-4">

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Pacifico&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -121,5 +122,11 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .font-pacifico {
+    font-family: 'Pacifico', cursive;
   }
 }

@@ -2,16 +2,16 @@ import { SignInButtons } from "@/components/auth/sign-in-buttons";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full space-y-12 text-center">
         {/* Hero Section */}
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
           {/* Project Name */}
           <div className="space-y-4">
-            <h1 className="text-7xl md:text-8xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/90 to-primary/70 tracking-tight">
+            <h1 className="font-pacifico text-7xl md:text-8xl font-bold bg-clip-text text-transparent bg-linear-to-r from-primary via-primary/90 to-primary/70 tracking-tight">
               Screenify
             </h1>
-            <div className="h-1 w-32 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto"></div>
+            <div className="h-1 w-32 bg-linear-to-r from-transparent via-primary to-transparent mx-auto"></div>
           </div>
 
           {/* Catchphrase */}

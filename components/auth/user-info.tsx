@@ -38,10 +38,7 @@ export function UserInfo() {
         <div className="space-y-2">
           <p className="text-sm font-medium">Name: {session.user.name}</p>
           <p className="text-sm font-medium">Email: {session.user.email}</p>
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium">Role:</p>
-            <Badge>{session.user.role}</Badge>
-          </div>
+          <p className="text-xs text-muted-foreground mt-2">ID: {session.user.id}</p>
         </div>
         <Button onClick={handleSignOut} variant="destructive" className="w-full">
           Sign Out

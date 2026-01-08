@@ -79,7 +79,7 @@ export default function QuizPage() {
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>• Do not switch tabs or exit fullscreen mode during the assessment</p>
               <p>• Your progress is automatically saved</p>
-              <p>• You can skip questions and return to them later</p>
+              <p>• You can't skip questions and return to them later</p>
               <p>• The assessment will auto-submit when time expires</p>
             </CardContent>
           </Card>

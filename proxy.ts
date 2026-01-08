@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "./lib/auth";
+import { prisma } from "./lib/prisma";
 
 export async function proxy(request: NextRequest) {
   const session = await auth.api.getSession({
@@ -21,17 +22,33 @@ export async function proxy(request: NextRequest) {
 
   // Role-based routing
   if (session) {
-    const userRole = (session.user as any).role || "CANDIDATE";
+    // Check if user is recruiter or candidate
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        recruiter: { select: { id: true } },
+        candidate: { select: { id: true } },
+      },
+    });
+
+    const isRecruiter = !!user?.recruiter;
+    const isCandidate = !!user?.candidate;
 
     // Recruiter trying to access candidate routes
-    if (userRole === "RECRUITER" && pathname.startsWith("/candidate")) {
+    if (isRecruiter && pathname.startsWith("/candidate")) {
       const url = new URL("/recruiter", request.url);
       return NextResponse.redirect(url);
     }
 
     // Candidate trying to access recruiter routes
-    if (userRole === "CANDIDATE" && pathname.startsWith("/recruiter")) {
+    if (isCandidate && pathname.startsWith("/recruiter")) {
       const url = new URL("/candidate", request.url);
+      return NextResponse.redirect(url);
+    }
+
+    // If user has no role yet, redirect to landing page
+    if (!isRecruiter && !isCandidate && !isPublicRoute) {
+      const url = new URL("/", request.url);
       return NextResponse.redirect(url);
     }
   }

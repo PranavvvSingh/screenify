@@ -74,7 +74,7 @@ export default function CandidateDashboard() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>1. Accept an invitation link from a recruiter</p>
-          <p>2. Sign in with GitHub or Google</p>
+          <p>2. Sign in with Google</p>
           <p>3. Upload your resume for profile extraction</p>
           <p>4. Take the AI-generated technical assessment</p>
           <p>5. View your results and wait for recruiter review</p>

@@ -27,7 +27,8 @@ export async function requireRecruiter() {
   });
 
   if (!user?.recruiter) {
-    redirect("/candidate");
+    // Don't redirect to candidate - user might not have that role either
+    redirect("/");
   }
 
   return { session, recruiter: user.recruiter };
@@ -42,7 +43,8 @@ export async function requireCandidate() {
   });
 
   if (!user?.candidate) {
-    redirect("/recruiter");
+    // Don't redirect to recruiter - user might not have that role either
+    redirect("/");
   }
 
   return { session, candidate: user.candidate };

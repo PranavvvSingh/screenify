@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       headers: await headers(),
     });
 
-    console.warn("User session",session?.user);
+    console.log("[AUTH CALLBACK] Processing auth callback for user:", session?.user?.email);
 
     if (!session) {
       // No session, redirect to landing page

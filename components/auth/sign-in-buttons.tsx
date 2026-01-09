@@ -17,7 +17,7 @@ export function SignInButtons() {
       onClick={handleGoogleSignIn}
       variant="outline"
       size="lg"
-      className="w-full max-w-sm h-12 text-lg cursor-pointer"
+      className="w-full max-w-sm h-10 text-lg cursor-pointer"
     >
       <FcGoogle style={{ width: '22px', height: '22px', marginRight: '12px' }} />
       Sign in with Google

@@ -97,7 +97,7 @@ export function PDFUpload({
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-base font-semibold">{label}</Label>
+        <Label className="text-lg font-semibold">{label}</Label>
         {description && (
           <p className="text-sm text-muted-foreground mt-1">{description}</p>
         )}
@@ -118,7 +118,7 @@ export function PDFUpload({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <CardContent className="p-6">
+        <CardContent className="p-2">
           {!file ? (
             <div className="flex flex-col items-center justify-center text-center space-y-4">
               <div className="rounded-full bg-muted p-4">

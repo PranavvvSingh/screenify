@@ -1,13 +1,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
-export default function InvitePage({ params }: { params: { token: string } }) {
+export default function DevInvitePage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-8">
       <div className="max-w-2xl w-full space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-foreground">You&apos;re Invited!</h1>
+          <Link href="/dev-preview">
+            <Button variant="ghost" size="sm">← Back to Dev Menu</Button>
+          </Link>
         </div>
 
         <Card>
@@ -38,12 +42,9 @@ export default function InvitePage({ params }: { params: { token: string } }) {
             <CardDescription>Sign in to begin your application</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" size="lg" disabled>
+            <Button className="w-full" size="lg">
               Sign in with Google
             </Button>
-            <p className="text-xs text-muted-foreground mt-4">
-              Authentication not yet implemented. This is a preview page.
-            </p>
           </CardContent>
         </Card>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,6 @@ import { useState } from "react";
 export default function NewRolePage() {
   const [jobTitle, setJobTitle] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [extractedText, setExtractedText] = useState("");
   const [fileName, setFileName] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
@@ -20,8 +19,6 @@ export default function NewRolePage() {
   const handleFileSelected = (file: File) => {
     setSelectedFile(file);
     setFileName(file.name);
-    // Reset extracted text when new file is selected
-    setExtractedText("");
   };
 
   const handleProcessRequirements = async () => {
@@ -49,7 +46,6 @@ export default function NewRolePage() {
         return;
       }
 
-      setExtractedText(result.text);
       console.log("PDF extracted successfully:", fileName);
       console.log("Text length:", result.text.length);
 
@@ -65,86 +61,77 @@ export default function NewRolePage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/recruiter">
-          <Button variant="outline">← Back</Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Create New Role</h1>
-          <p className="text-muted-foreground mt-1">Upload a job description to get started</p>
-        </div>
-      </div>
+		<div className='max-w-3xl mx-auto space-y-6'>
+			<div className='flex items-center gap-4'>
+				<Link href='/recruiter'>
+					<Button variant='outline'>← Back</Button>
+				</Link>
+				<div>
+					<h1 className='text-3xl font-bold text-foreground'>Create New Role</h1>
+				</div>
+			</div>
 
-      <Card>
-        <CardHeader>
+			<Card>
+				{/* <CardHeader>
           <CardTitle>Job Description Upload</CardTitle>
           <CardDescription>Upload a PDF file containing the job description</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">Job Title</Label>
-            <Input
-              id="title"
-              placeholder="e.g. Senior Full Stack Developer"
-              value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
-            />
-          </div>
+        </CardHeader> */}
+				<CardContent className='space-y-10'>
+					<div className='space-y-2'>
+						<Label htmlFor='title' className='text-lg font-semibold'>
+							Job Title
+						</Label>
+						<Input
+							id='title'
+							placeholder='e.g. Senior Full Stack Developer'
+							value={jobTitle}
+							onChange={(e) => setJobTitle(e.target.value)}
+						/>
+					</div>
 
-          <PDFUpload
-            label="Job Description (PDF)"
-            description="Upload a PDF containing the full job description, requirements, and responsibilities"
-            onFileSelected={handleFileSelected}
-            maxSizeMB={10}
-          />
+					<PDFUpload
+						label='Job Description'
+						description='Upload a PDF containing the full job description, requirements, and responsibilities'
+						onFileSelected={handleFileSelected}
+						maxSizeMB={10}
+					/>
 
-          {selectedFile && (
-            <div className="text-sm text-muted-foreground">
-              ✓ PDF ready: <span className="font-medium">{fileName}</span>
-            </div>
-          )}
+					{selectedFile && (
+						<div className='text-sm text-muted-foreground'>
+							✓ PDF ready: <span className='font-medium'>{fileName}</span>
+						</div>
+					)}
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Additional Notes (Optional)</Label>
-            <Textarea
-              id="description"
-              placeholder="Any additional context or requirements..."
-              rows={4}
-              value={additionalNotes}
-              onChange={(e) => setAdditionalNotes(e.target.value)}
-            />
-          </div>
+					<div className='space-y-2'>
+						<Label htmlFor='description' className='text-lg font-semibold'>
+							Additional Notes (Optional)
+						</Label>
+						<Textarea
+							id='description'
+							placeholder='Any additional context or requirements...'
+							rows={4}
+							value={additionalNotes}
+							onChange={(e) => setAdditionalNotes(e.target.value)}
+						/>
+					</div>
 
-          <div className="flex gap-3">
-            <Button
-              size="lg"
-              className="flex-1"
-              onClick={handleProcessRequirements}
-              disabled={!selectedFile || !jobTitle.trim() || isExtracting}
-            >
-              {isExtracting ? "Processing..." : "Process & Extract Requirements"}
-            </Button>
-            <Link href="/recruiter">
-              <Button variant="outline" size="lg">
-                Cancel
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>What happens next?</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <p>1. We&apos;ll extract key requirements from your job description</p>
-          <p>2. You&apos;ll review and edit the extracted requirements</p>
-          <p>3. Generate an invitation link to share with candidates</p>
-          <p>4. Candidates take AI-generated quizzes based on the role requirements</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+					<div className='flex gap-3'>
+						<Button
+							size='lg'
+							className='flex-1 text-md'
+							onClick={handleProcessRequirements}
+							disabled={!selectedFile || !jobTitle.trim() || isExtracting}
+						>
+							{isExtracting ? "Processing..." : "Process & Extract Requirements"}
+						</Button>
+						<Link href='/recruiter'>
+							<Button variant='outline' size='lg'>
+								Cancel
+							</Button>
+						</Link>
+					</div>
+				</CardContent>
+			</Card>
+		</div>
+	);
 }

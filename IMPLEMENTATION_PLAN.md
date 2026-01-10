@@ -2,12 +2,16 @@
 
 ## Project Overview
 
-AI-powered candidate screening platform with candidate-specific quiz generation using Next.js 16, PostgreSQL, Ollama Cloud API, and shadcn/ui.
+AI-powered candidate screening platform with **two-part assessment** (70% standardized + 30% resume verification) using Next.js 16, PostgreSQL, Ollama Cloud API, and shadcn/ui.
 
 ## Key Decisions Made
 
 - ✅ **Frontend**: shadcn/ui for all UI components
-- ✅ **Authentication**: Better Auth with Google OAuth for both recruiters AND candidates
+- ✅ **Authentication**: Better Auth with Google OAuth **for recruiters ONLY**
+- ✅ **No Candidate Auth**: Candidates access via unique quiz links (no login required)
+- ✅ **Recruiter-Controlled Flow**: Recruiter uploads both JD and candidate resumes
+- ✅ **Two-Part Quiz**: 70% standard questions (JD-based) + 30% verification questions (resume-based)
+- ✅ **Configurable Questions**: 5-25 questions total (default 10), maintains 70/30 split
 - ✅ **No Email Service**: Email notifications not implemented in MVP
 - ✅ **No Testing**: Skip testing setup for now
 - ✅ **Environment Variables**: Used throughout the application
@@ -186,7 +190,7 @@ enum UserRole {
 
 ---
 
-#### ✅ ~~Task 5: Implement Better Auth with OAuth (Recruiters + Candidates)~~
+#### ✅ ~~Task 5: Implement Better Auth with OAuth (Recruiters Only)~~
 
 **Status**: Pending
 
@@ -197,23 +201,23 @@ enum UserRole {
 - [ ] Configure Better Auth with:
   - Google OAuth Provider
   - Prisma adapter for database
-  - Custom user metadata for role (RECRUITER/CANDIDATE)
+  - **Recruiter role only** (no candidate authentication)
 - [ ] Create API route handler `app/api/auth/[...all]/route.ts`
 - [ ] Create Google OAuth App (get CLIENT_ID and CLIENT_SECRET)
 - [ ] Create auth client `lib/auth-client.ts` for frontend hooks
 - [ ] Create custom sign-in page at `app/auth/signin/page.tsx`
-- [ ] Add role selection during first sign-in (Recruiter vs Candidate)
-- [ ] Create middleware for route protection
+- [ ] All new users automatically assigned RECRUITER role
+- [ ] Create middleware for recruiter route protection
 
 **Verification Checklist**:
 
 - [ ] Navigate to `/auth/signin` shows Google OAuth option
 - [ ] Google OAuth login works and creates user in database
-- [ ] User created with selected role (RECRUITER or CANDIDATE)
-- [ ] Session includes user role and metadata
+- [ ] User created with RECRUITER role automatically
+- [ ] Session includes user data
 - [ ] `useSession()` hook from auth-client returns user data
 - [ ] Sign out works correctly
-- [ ] Protected routes redirect to sign-in
+- [ ] Recruiter routes protected, redirect to sign-in if not authenticated
 
 **Files Created**:
 
@@ -485,7 +489,7 @@ export async function extractJDRequirements(rawText: string) {
 
 ### **Phase 3: Recruiter Flow**
 
-#### ✅ Task 10: Role Creation + JD Upload Flow
+#### ✅ Task 10: Role Creation + JD Upload + Base Question Generation
 
 **Status**: Pending
 
@@ -496,21 +500,30 @@ export async function extractJDRequirements(rawText: string) {
   - Role title (required)
   - Role description (optional)
   - JD PDF upload
+  - **Total questions count** (slider: 5-25, default 10)
 - [ ] Integrate PDF upload component
 - [ ] Extract text from uploaded JD PDF
-- [ ] Send extracted text to Ollama Cloud API
+- [ ] Send extracted text to Ollama Cloud API for requirements extraction
 - [ ] Display loading state during extraction
-- [ ] Show extracted requirements in next step
+- [ ] Show extracted requirements in next step (editable)
+- [ ] After requirements approved, generate **base questions (70% of total)**
+- [ ] Call Ollama API to generate standardized questions from JD only
 - [ ] Create API route `app/api/role/create/route.ts`
-- [ ] Save role to database with requirements JSONB
+- [ ] Save role to database with:
+  - requirements JSONB
+  - baseQuestions JSONB (70% of total count)
+  - totalQuestions number
 
 **Verification Checklist**:
 
 - [ ] Form validates required fields
 - [ ] PDF upload triggers extraction
 - [ ] Extracted requirements shown (required_skills, experience, etc.)
+- [ ] Can configure total question count
+- [ ] Base questions generated (e.g., 7 out of 10 total)
+- [ ] Base questions stored in database
 - [ ] Role saved to database with recruiter_id
-- [ ] Redirect to role edit page after creation
+- [ ] Redirect to role overview page after creation
 - [ ] Role appears in roles list
 
 **Files Created**:
@@ -557,232 +570,235 @@ export async function extractJDRequirements(rawText: string) {
 
 ---
 
-#### ✅ Task 12: Invitation Link Generation System
+#### ✅ Task 12: Per-Candidate Quiz Setup (Resume Upload + Verification Questions)
 
 **Status**: Pending
 
 **Actions**:
 
-- [ ] Add "Generate Invite Link" button to role page
-- [ ] Create API route `app/api/role/[id]/invite/route.ts`
-- [ ] Generate unique token (UUID)
-- [ ] Insert into `invitations` table with:
-  - role_id
-  - token
-  - status: 'ACTIVE'
-  - max_uses: null (unlimited for MVP)
-  - expires_at: null (no expiry for MVP)
-- [ ] Return invite URL: `{APP_URL}/invite/{token}`
+- [ ] Create `app/(recruiter)/roles/[id]/add-candidate/page.tsx`
+- [ ] Build form with:
+  - Candidate name (required)
+  - Candidate email (required)
+  - Resume PDF upload (required)
+- [ ] Extract text from uploaded resume PDF
+- [ ] Send extracted text to Ollama Cloud API for profile extraction
+- [ ] Focus on **projects and tech mentioned in projects**
+- [ ] Generate **verification questions (30% of total)** from resume projects
+- [ ] Combine base questions (70%) + verification questions (30%)
+- [ ] Shuffle all questions fully (no visual distinction)
+- [ ] Create API route `app/api/role/[id]/add-candidate/route.ts`
+- [ ] Generate unique quiz token (UUID)
+- [ ] Store in database:
+  - Candidate profile (name, email, resume data)
+  - Complete quiz (base + verification, shuffled)
+  - Unique quiz token
+- [ ] Return quiz URL: `{APP_URL}/quiz/{token}`
 - [ ] Add copy-to-clipboard button
-- [ ] Show list of active invitations for role
-- [ ] Add ability to deactivate invitation
+- [ ] Show list of candidates for this role with their quiz links
 
 **Verification Checklist**:
 
-- [ ] Click "Generate Invite" creates new token
-- [ ] Token stored in database with role_id
-- [ ] Invite URL displayed with copy button
-- [ ] Copy button works (clipboard API or fallback)
-- [ ] Can generate multiple invites per role
-- [ ] Can view all invitations for a role
-- [ ] Can deactivate invitation (status → 'EXPIRED')
+- [ ] Upload resume triggers extraction
+- [ ] Profile extracted with project-based tech skills
+- [ ] Verification questions generated (e.g., 3 out of 10 total)
+- [ ] Questions focus on projects mentioned in resume
+- [ ] Base + verification questions combined and shuffled
+- [ ] Unique quiz token created
+- [ ] Quiz URL displayed with copy button
+- [ ] Can add multiple candidates per role
+- [ ] Each candidate gets unique quiz link
+- [ ] Candidate appears in role's candidate list
 
 **Files Created**:
 
-- `app/api/role/[id]/invite/route.ts`
-- `components/invite-link-generator.tsx`
+- `app/(recruiter)/roles/[id]/add-candidate/page.tsx`
+- `app/api/role/[id]/add-candidate/route.ts`
+- `components/candidate-form.tsx`
 
 ---
 
-### **Phase 4: Candidate Flow**
+### **Phase 4: Candidate Flow (No Authentication)**
 
-#### ✅ Task 13: Candidate Invite Landing Page
+#### ✅ Task 13: Quiz Landing Page (Public Access)
 
 **Status**: Pending
 
 **Actions**:
 
-- [ ] Create `app/(candidate)/invite/[token]/page.tsx`
-- [ ] Make this route public (bypass auth temporarily)
-- [ ] Create API route `app/api/invite/[token]/validate/route.ts`
-- [ ] Validate token exists and is ACTIVE
-- [ ] Fetch associated role details
+- [ ] Create `app/quiz/[token]/page.tsx` (public route, no auth)
+- [ ] Create API route `app/api/quiz/[token]/validate/route.ts`
+- [ ] Validate quiz token exists and quiz not completed
+- [ ] Fetch associated role details and candidate name
 - [ ] Display:
-  - Company/Role title
-  - Role description
-  - "Sign in to Continue" button (OAuth)
-- [ ] After OAuth sign-in, return to this page
-- [ ] Show "Upload Resume" section after auth
-- [ ] Handle invalid/expired token with error message
+  - Welcome message with candidate name
+  - Role title
+  - Quiz instructions
+  - Question count and estimated time
+  - "Start Assessment" button
+- [ ] Handle invalid/expired/completed token with error message
+- [ ] Track quiz start time when button clicked
 
 **Verification Checklist**:
 
-- [ ] Navigate to `/invite/{valid-token}` shows role details
-- [ ] Navigate to `/invite/{invalid-token}` shows error
-- [ ] "Sign in to Continue" redirects to OAuth
-- [ ] After sign-in, redirected back to invite page
-- [ ] Resume upload section visible after auth
-- [ ] User role set to CANDIDATE on first sign-in
+- [ ] Navigate to `/quiz/{valid-token}` shows quiz landing page
+- [ ] Navigate to `/quiz/{invalid-token}` shows error
+- [ ] Navigate to `/quiz/{completed-token}` shows "Already completed" message
+- [ ] No authentication required
+- [ ] Candidate name displayed correctly
+- [ ] "Start Assessment" button navigates to quiz interface
 
 **Files Created**:
 
-- `app/(candidate)/invite/[token]/page.tsx`
-- `app/api/invite/[token]/validate/route.ts`
+- `app/quiz/[token]/page.tsx`
+- `app/api/quiz/[token]/validate/route.ts`
 
 ---
 
-#### ✅ Task 14: Resume Extraction and Profile Storage Pipeline
+#### ✅ Task 14: Question Structure with Type Tracking
 
-**Status**: Pending
-
-**Actions**:
-
-- [ ] Add resume PDF upload component to invite page
-- [ ] Extract text from resume using pdf.js
-- [ ] Create API route `app/api/invite/[token]/resume/route.ts`
-- [ ] Send extracted text to Ollama Cloud API for structuring
-- [ ] Parse response into profile JSONB:
-  - name, email, phone
-  - skills: string[]
-  - experience: {company, role, duration, description}[]
-  - education: {degree, institution, year}[]
-  - total_experience_years: number
-- [ ] Create/update candidate record:
-  - invitation_id
-  - role_id
-  - user_id (authenticated user)
-  - email (from OAuth or profile)
-  - profile (JSONB)
-  - status: 'INVITED'
-- [ ] Handle unique constraint (email, role_id)
-- [ ] Trigger quiz generation after profile saved
-
-**Verification Checklist**:
-
-- [ ] Upload resume PDF extracts text
-- [ ] Ollama returns structured profile JSON
-- [ ] Profile saved to `candidates.profile` JSONB
-- [ ] Candidate record created with correct relations
-- [ ] Can't submit resume twice for same role
-- [ ] Profile data visible in database
-- [ ] Next step (quiz generation) triggered automatically
-
-**Files Created**:
-
-- `app/api/invite/[token]/resume/route.ts`
-- `components/resume-upload.tsx`
-
----
-
-#### ✅ Task 15: Quiz Generation Engine (CONJUNCTION POINT)
-
-**Status**: Pending
+**Status**: Pending (Design Task)
 
 **Actions**:
 
-- [ ] Create `lib/quiz-generator.ts` service
-- [ ] Fetch role requirements from database
-- [ ] Fetch candidate profile from database
-- [ ] Build context-aware prompt with:
-  - Role title and requirements
-  - Candidate skills and experience
-  - Instruction to generate TOUGH questions
-  - JSON output format specification
-- [ ] Call Ollama Cloud API with prompt
-- [ ] Parse response (15-20 MCQ questions)
-- [ ] Validate question structure:
+- [ ] Define question structure in TypeScript:
   ```typescript
-  {
-    id: string,
-    question: string,
-    options: string[],
-    correct_index: number,
-    skill: string,
-    difficulty: 'easy' | 'medium' | 'hard'
+  interface Question {
+    id: string
+    type: 'STANDARD' | 'RESUME_VERIFICATION'
+    question: string
+    options: string[]
+    correctAnswer: string
+    skill: string
+    difficulty?: 'Easy' | 'Medium' | 'Hard'
+    resumeClaim?: string // Only for RESUME_VERIFICATION type
   }
   ```
-- [ ] Insert quiz into `quizzes` table with:
-  - candidate_id (UNIQUE)
-  - role_id
-  - questions (JSONB)
-  - metadata (generation timestamp, context)
-- [ ] Handle UNIQUE constraint violation (quiz already exists)
-- [ ] Return quiz_id to frontend
+- [ ] Ensure all questions stored with type field
+- [ ] Standard questions (70%): type = 'STANDARD'
+- [ ] Verification questions (30%): type = 'RESUME_VERIFICATION'
+- [ ] Include `resumeClaim` for verification questions (e.g., "Claimed Kafka experience in Project X")
+- [ ] Questions fully shuffled before storage (candidate sees no distinction)
 
 **Verification Checklist**:
 
-- [ ] After resume upload, quiz auto-generates
-- [ ] Quiz contains 15-20 questions
-- [ ] Questions are relevant to role requirements
-- [ ] Questions stored in `quizzes.questions` JSONB
-- [ ] UNIQUE constraint prevents duplicate quiz generation
-- [ ] Quiz appears ready for candidate to take
-- [ ] Questions are challenging (not trivial)
+- [ ] Question type tracked in database
+- [ ] Standard questions marked correctly
+- [ ] Verification questions marked correctly
+- [ ] Resume claim stored for verification questions
+- [ ] Questions shuffled before storage
+- [ ] Type information available for evaluation (but not shown to candidate)
 
 **Files Created**:
 
-- `lib/quiz-generator.ts`
-- `app/api/quiz/generate/route.ts`
+- Update `types/quiz.ts`
 
-**Sample Prompt Structure**:
+---
 
-```typescript
-const prompt = `You are a technical interviewer creating a RIGOROUS assessment.
+#### ✅ Task 15: Base Question Generation (During Role Creation)
 
-ROLE: ${role.title}
-REQUIRED SKILLS: ${requirements.required_skills.join(", ")}
-EXPERIENCE: ${requirements.experience.min}-${requirements.experience.max} years
+**Status**: Pending (Part of Task 10)
 
-CANDIDATE BACKGROUND:
-- Skills: ${profile.skills.join(", ")}
-- Experience: ${profile.total_experience_years} years
+**Actions**:
 
-Generate 20 TOUGH multiple-choice questions...
-[Full prompt from project.md]
-`;
-```
+- [ ] Called during role creation (Task 10)
+- [ ] Build prompt for Ollama API:
+  - Role requirements only
+  - Generate N×0.7 questions (e.g., 7 out of 10)
+  - Focus on technical depth
+  - Test required skills only
+- [ ] Mark all questions as type: 'STANDARD'
+- [ ] Store in `jobRoles.baseQuestions` JSONB
+- [ ] These questions reused for ALL candidates for this role
+
+**Verification Checklist**:
+
+- [ ] Base questions generated during role creation
+- [ ] Correct count (70% of total)
+- [ ] All marked as STANDARD type
+- [ ] Questions test required skills from JD
+- [ ] Stored in jobRoles table
+- [ ] Reused for all candidates
+
+**Integrated into Task 10** (no separate files)
+
+---
+
+#### ✅ Task 16: Verification Question Generation (Per Candidate)
+
+**Status**: Pending (Part of Task 12)
+
+**Actions**:
+
+- [ ] Called during per-candidate quiz setup (Task 12)
+- [ ] Build prompt for Ollama API:
+  - Candidate resume (focus on projects)
+  - Generate N×0.3 questions (e.g., 3 out of 10)
+  - Base questions on tech mentioned IN projects
+  - Test depth, not breadth
+  - Example: "You mentioned Kafka in Project X. Explain consumer groups."
+- [ ] Mark all questions as type: 'RESUME_VERIFICATION'
+- [ ] Include `resumeClaim` field for each question
+- [ ] Combine with base questions + shuffle
+- [ ] Store complete quiz in `quizzes` table
+
+**Verification Checklist**:
+
+- [ ] Verification questions generated per candidate
+- [ ] Correct count (30% of total)
+- [ ] All marked as RESUME_VERIFICATION type
+- [ ] Questions focus on projects from resume
+- [ ] Resume claim captured for each question
+- [ ] Combined with base questions and shuffled
+- [ ] Stored in quizzes table
+
+**Integrated into Task 12** (no separate files)
 
 ---
 
 ### **Phase 5: Assessment System**
 
-#### ✅ Task 16: Quiz Taking Interface
+#### ✅ Task 17: Quiz Taking Interface (Token-Based Access)
 
 **Status**: Pending
 
 **Actions**:
 
-- [ ] Create `app/(candidate)/quiz/[id]/page.tsx`
-- [ ] Fetch quiz from database (verify candidate_id matches authenticated user)
+- [ ] Update `app/quiz/[token]/page.tsx` to include quiz interface
+- [ ] Fetch quiz from database using token (no auth required)
 - [ ] Create `components/quiz-interface.tsx`
-- [ ] Display questions one-by-one or all at once (decide UX)
+- [ ] Display all questions (candidate sees them identically)
+- [ ] **No visual distinction** between standard and verification questions
 - [ ] Render MCQ options as radio buttons (shadcn RadioGroup)
 - [ ] Add "Next" / "Previous" navigation buttons
 - [ ] Track current question index
 - [ ] Store answers in component state
 - [ ] Add "Submit Quiz" button (disabled until all answered)
-- [ ] Show progress indicator (e.g., "Question 5 of 20")
+- [ ] Show progress indicator (e.g., "Question 5 of 10")
 - [ ] Add confirmation dialog before submission
+- [ ] Track time spent per question
 
 **Verification Checklist**:
 
 - [ ] Quiz page loads with all questions
+- [ ] All questions appear identical (no type indication)
 - [ ] Can select answer for each question
 - [ ] Navigation between questions works
 - [ ] Progress indicator accurate
 - [ ] Can change answers before submission
 - [ ] Submit button shows confirmation dialog
-- [ ] Cannot access quiz after submission
+- [ ] Cannot access quiz after submission (token invalidated)
+- [ ] Time per question tracked
 
 **Files Created**:
 
-- `app/(candidate)/quiz/[id]/page.tsx`
+- Update `app/quiz/[token]/page.tsx`
 - `components/quiz-interface.tsx`
 - `components/question-card.tsx`
 
 ---
 
-#### ✅ Task 17: Proctoring System Implementation
+#### ✅ Task 18: Proctoring System Implementation
 
 **Status**: Pending
 
@@ -826,7 +842,7 @@ Generate 20 TOUGH multiple-choice questions...
 
 ---
 
-#### ✅ Task 18: Timer Component with Auto-Submit
+#### ✅ Task 19: Timer Component with Auto-Submit
 
 **Status**: Pending
 
@@ -859,7 +875,7 @@ Generate 20 TOUGH multiple-choice questions...
 
 ---
 
-#### ✅ Task 19: Response Submission Handler
+#### ✅ Task 20: Response Submission Handler
 
 **Status**: Pending
 
@@ -907,7 +923,7 @@ Generate 20 TOUGH multiple-choice questions...
 
 ### **Phase 6: Evaluation Engine**
 
-#### ✅ Task 20: Auto-Evaluation Engine with Skill Breakdown
+#### ✅ Task 21: Auto-Evaluation Engine with Two-Part Scoring
 
 **Status**: Pending
 
@@ -916,30 +932,41 @@ Generate 20 TOUGH multiple-choice questions...
 - [ ] Create `lib/evaluation-engine.ts`
 - [ ] Create function `evaluateAttempt(attemptId: string)`
 - [ ] Fetch attempt with responses
-- [ ] Fetch quiz with questions and correct answers
-- [ ] Calculate MCQ score:
-  - Compare `responses[i].selected_index` with `questions[i].correct_index`
-  - Count correct answers
-  - Calculate percentage: `(correct / total) * 100`
-- [ ] Calculate skill breakdown:
-  - Group questions by skill
-  - Calculate percentage per skill
-  - Return object: `{React: 80, Node.js: 70, ...}`
+- [ ] Fetch quiz with questions (including type field)
+- [ ] **Part 1: Calculate Standard Score (70% questions only)**:
+  - Filter questions where `type === 'STANDARD'`
+  - Compare responses with correct answers
+  - Calculate percentage: `(correct / standard_total) * 100`
+  - **This is the ranking score** used for comparison
+- [ ] **Part 2: Calculate Verification Flags (30% questions)**:
+  - Filter questions where `type === 'RESUME_VERIFICATION'`
+  - Check correctness of each verification question
+  - Calculate verification rate: `correct / verification_total`
+  - Assign status:
+    - ✅ VERIFIED (≥80% correct)
+    - ⚠️ QUESTIONABLE (50-79% correct)
+    - 🚩 DISCREPANCY (<50% correct)
+  - Store individual verification results with resume claims
+- [ ] Calculate skill breakdown (from standard questions only)
 - [ ] Create evaluation record:
   - attempt_id
   - candidate_id
-  - score (overall percentage)
-  - skill_breakdown (JSONB)
+  - **standardScore** (0-100, for ranking)
+  - **verificationStatus** ('VERIFIED' | 'QUESTIONABLE' | 'DISCREPANCY')
+  - **verificationResults** (JSONB array with claim details)
+  - skill_breakdown (JSONB, from standard questions only)
   - evaluated_at: NOW()
-- [ ] Call from submission handler (Task 19)
+- [ ] Call from submission handler (Task 20)
 
 **Verification Checklist**:
 
 - [ ] After submission, evaluation created automatically
-- [ ] Score calculated correctly (verify with known answers)
-- [ ] Skill breakdown accurate
+- [ ] Standard score calculated correctly (70% questions only)
+- [ ] Verification status assigned correctly
+- [ ] Verification results include resume claims
+- [ ] Skill breakdown based on standard questions only
 - [ ] Evaluation stored in database
-- [ ] Can view evaluation in recruiter dashboard
+- [ ] Recruiter can see ranking score + verification flags separately
 
 **Files Created**:
 
@@ -949,29 +976,38 @@ Generate 20 TOUGH multiple-choice questions...
 **Sample Calculation**:
 
 ```typescript
-// Total Score
-const correctCount = responses.filter((r, i) => r.selected_index === questions[i].correct_index).length;
-const score = (correctCount / questions.length) * 100;
+// Part 1: Standard Score (Ranking)
+const standardQuestions = questions.filter(q => q.type === 'STANDARD');
+const standardResponses = responses.filter((_, i) => questions[i].type === 'STANDARD');
+const standardCorrect = standardResponses.filter((r, i) =>
+  r.selected_index === standardQuestions[i].correct_index
+).length;
+const standardScore = (standardCorrect / standardQuestions.length) * 100;
 
-// Skill Breakdown
-const skillGroups = questions.reduce((acc, q) => {
-	if (!acc[q.skill]) acc[q.skill] = { total: 0, correct: 0 };
-	acc[q.skill].total++;
-	if (responses[i].selected_index === q.correct_index) {
-		acc[q.skill].correct++;
-	}
-	return acc;
-}, {});
+// Part 2: Verification Flags
+const verificationQuestions = questions.filter(q => q.type === 'RESUME_VERIFICATION');
+const verificationResponses = responses.filter((_, i) => questions[i].type === 'RESUME_VERIFICATION');
+const verificationCorrect = verificationResponses.filter((r, i) =>
+  r.selected_index === verificationQuestions[i].correct_index
+).length;
+const verificationRate = verificationCorrect / verificationQuestions.length;
 
-const skillBreakdown = Object.entries(skillGroups).reduce((acc, [skill, data]) => {
-	acc[skill] = (data.correct / data.total) * 100;
-	return acc;
-}, {});
+let verificationStatus;
+if (verificationRate >= 0.8) verificationStatus = 'VERIFIED';
+else if (verificationRate >= 0.5) verificationStatus = 'QUESTIONABLE';
+else verificationStatus = 'DISCREPANCY';
+
+// Store verification results with claims
+const verificationResults = verificationQuestions.map((q, i) => ({
+  claim: q.resumeClaim,
+  question: q.question,
+  correct: verificationResponses[i].selected_index === q.correct_index
+}));
 ```
 
 ---
 
-#### ✅ Task 21: Confidence Scoring with Anomaly Detection
+#### ✅ Task 22: Confidence Scoring with Anomaly Detection
 
 **Status**: Pending
 
@@ -1043,7 +1079,7 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 
 ### **Phase 7: Recruiter Dashboard**
 
-#### ✅ Task 22: Candidate List Dashboard with Filters
+#### ✅ Task 23: Candidate List Dashboard with Two-Part Scoring Display
 
 **Status**: Pending
 
@@ -1052,26 +1088,36 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 - [ ] Create `app/(recruiter)/dashboard/page.tsx`
 - [ ] Fetch all candidates for recruiter's roles
 - [ ] Create API route `app/api/dashboard/candidates/route.ts`
-- [ ] Include JOIN with evaluations for score/confidence
+- [ ] Include JOIN with evaluations for scores
 - [ ] Build table with shadcn Table component:
-  - Columns: Name, Email, Role, Status, Score, Confidence, Date Applied
+  - Columns: Name, Email, Role, **Ranking Score**, **Verification Status**, Confidence, Date Applied
+  - **Ranking Score**: Standard questions score (70%) - used for sorting
+  - **Verification Status**: ✅/⚠️/🚩 indicator
 - [ ] Add filters (shadcn Select):
   - Status: All, Invited, Submitted, Shortlisted, Rejected
-  - Score range: Slider (0-100)
+  - Ranking score range: Slider (0-100)
+  - Verification: All, Verified, Questionable, Discrepancy
 - [ ] Add sorting:
-  - Sort by: Score (desc), Date (desc), Confidence (desc)
+  - **Default: Ranking Score (desc)** - fair comparison
+  - Also: Date (desc), Confidence (desc)
 - [ ] Add pagination (10 per page)
 - [ ] Click row navigates to candidate detail page
 - [ ] Add "Compare Selected" button (multi-select rows)
+- [ ] Add tooltip to verification indicator showing details
 
 **Verification Checklist**:
 
 - [ ] All candidates displayed in table
+- [ ] Ranking score column shows standard questions score only
+- [ ] Verification status shows icon (✅/⚠️/🚩)
+- [ ] Can sort by ranking score for fair comparison
+- [ ] Can filter by verification status
 - [ ] Filters work correctly
 - [ ] Sorting works
 - [ ] Pagination works
 - [ ] Click row navigates to detail
 - [ ] Multi-select for comparison works
+- [ ] Verification tooltip shows which claims failed
 
 **Files Created**:
 
@@ -1079,10 +1125,11 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 - `app/api/dashboard/candidates/route.ts`
 - `components/candidate-table.tsx`
 - `components/candidate-filters.tsx`
+- `components/verification-badge.tsx`
 
 ---
 
-#### ✅ Task 23: Candidate Detail View
+#### ✅ Task 24: Candidate Detail View with Verification Details
 
 **Status**: Pending
 
@@ -1093,11 +1140,20 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 - [ ] Create API route `app/api/candidate/[id]/route.ts`
 - [ ] Verify recruiter owns this candidate's role
 - [ ] Build layout with shadcn Card components:
-  - **Profile Section**: Name, email, phone, skills, experience, education
-  - **Assessment Summary**: Score, confidence, time taken
+  - **Profile Section**: Name, email, resume data
+  - **Assessment Summary**:
+    - **Ranking Score** (standard questions only) - large, prominent
+    - **Verification Status** with badge (✅/⚠️/🚩)
+    - Confidence score
+    - Time taken
+  - **Verification Details Section**:
+    - List of verification questions
+    - Show resume claim for each
+    - Show if candidate answered correctly
+    - Highlight failed verifications
   - **Proctoring Events**: List of tab switches, fullscreen exits
-  - **Skill Breakdown**: Visual chart (next task)
-  - **Question Review** (optional): Show questions, candidate's answers, correct answers
+  - **Skill Breakdown**: Visual chart from standard questions only
+  - **Question Review** (optional): Show all questions with answers
 - [ ] Add action buttons:
   - Shortlist (green button)
   - Reject (red button)
@@ -1121,7 +1177,7 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 
 ---
 
-#### ✅ Task 24: Skill Breakdown Visualization
+#### ✅ Task 25: Skill Breakdown Visualization
 
 **Status**: Pending
 
@@ -1166,7 +1222,7 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 
 ---
 
-#### ✅ Task 25: Candidate Comparison View
+#### ✅ Task 26: Candidate Comparison View
 
 **Status**: Pending
 
@@ -1204,7 +1260,7 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 
 ---
 
-#### ✅ Task 26: Shortlist and Reject Actions
+#### ✅ Task 27: Shortlist and Reject Actions
 
 **Status**: Pending
 
@@ -1242,7 +1298,7 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 
 ---
 
-#### ✅ Task 27: Role Overview Dashboard
+#### ✅ Task 28: Role Overview Dashboard
 
 **Status**: Pending
 
@@ -1287,7 +1343,7 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 
 ### **Phase 8: Security & Polish**
 
-#### ✅ Task 28: PostgreSQL Row-Level Security (RLS) Policies
+#### ✅ Task 29: PostgreSQL Row-Level Security (RLS) Policies
 
 **Status**: Pending
 
@@ -1334,7 +1390,7 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 
 ---
 
-#### ✅ Task 29: Single-Attempt and Immutability Enforcement
+#### ✅ Task 30: Single-Attempt and Immutability Enforcement
 
 **Status**: Pending
 
@@ -1371,7 +1427,7 @@ if (last20PercentCorrect === questionCount - last20PercentIndex) {
 
 ---
 
-#### ✅ Task 30: Error Boundaries and Loading States
+#### ✅ Task 31: Error Boundaries and Loading States
 
 **Status**: Pending
 
@@ -1531,12 +1587,73 @@ After completing each phase, verify:
 
 ---
 
+## Key Architectural Changes from Original Plan
+
+### ✅ **No Candidate Authentication**
+- **Previous**: Candidates login via Google OAuth, upload their own resume
+- **New**: Candidates access via unique quiz links (no authentication needed)
+- **Impact**: Simpler flow, higher completion rate, less code
+
+### ✅ **Recruiter-Controlled Flow**
+- **Previous**: Candidates self-serve (click invite → upload resume → take quiz)
+- **New**: Recruiter uploads both JD and candidate resumes
+- **Impact**: Recruiter has full control, prevents candidate gaming
+
+### ✅ **Two-Part Assessment System (70/30 Split)**
+- **Previous**: All questions candidate-specific, single score
+- **New**: 70% standard (JD-based) + 30% verification (resume-based)
+- **Impact**: Fair comparison across candidates, resume fraud detection
+
+### ✅ **Standard Questions Generated at Role Creation**
+- **Previous**: Quiz generated per candidate
+- **New**: Base questions (70%) generated when role created, reused for all candidates
+- **Impact**: Ensures fair comparison, all candidates get same standard questions
+
+### ✅ **Verification Questions Per Candidate**
+- **New**: 30% of questions generated from candidate's resume projects
+- **Focus**: Tech mentioned IN projects, tests depth not breadth
+- **Impact**: Catches resume inflation without affecting ranking
+
+### ✅ **Two-Part Scoring**
+- **Previous**: Single score used for ranking
+- **New**:
+  - Ranking Score (70% questions only) - used for comparison
+  - Verification Flags (30% questions) - qualitative, not scored
+- **Impact**: Fair ranking + fraud detection
+
+### ✅ **Question Structure**
+- Questions have `type` field: 'STANDARD' or 'RESUME_VERIFICATION'
+- Fully shuffled before storage
+- Candidate sees no visual distinction
+- Recruiter sees which questions flagged resume discrepancies
+
+### ✅ **Configurable Question Count**
+- Total questions: 5-25 (default 10)
+- Always maintains 70/30 split
+- Set during role creation
+
+### ✅ **Database Schema Changes Required**
+- JobRole needs: `baseQuestions`, `totalQuestions` fields
+- Quiz question structure needs: `type`, `resumeClaim` fields
+- Evaluation needs: `standardScore`, `verificationStatus`, `verificationResults` fields
+- Candidate auth-related fields may be simplified (no User relation needed)
+
+### ✅ **UI Changes**
+- Dashboard shows two columns: Ranking Score + Verification Status
+- Candidate detail shows verification section with failed claims
+- Verification badge component (✅/⚠️/🚩)
+- Questions configured during role creation
+
+---
+
 ## Next Steps
 
 Ready to begin implementation!
 
-**Current Status**: All 30 tasks defined and ready to execute.
+**Current Status**: All 31 tasks defined and ready to execute with updated architecture.
 
 **Start with Task 1**: Initialize Next.js 16 project with all dependencies.
+
+**Next: Task 3 (Database Schema)** - Critical to update schema for two-part assessment system.
 
 Let me know when you're ready to proceed!

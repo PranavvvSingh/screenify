@@ -1,3 +1,7 @@
+// DEPRECATED: This page is from the old invitation-based flow
+// TODO: Repurpose this route for token-based quiz access
+// New architecture: Recruiter uploads resume → creates quiz with unique token → candidate accesses via this route
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,15 +39,12 @@ export default function InvitePage({ params }: { params: { token: string } }) {
         <Card>
           <CardHeader>
             <CardTitle>Get Started</CardTitle>
-            <CardDescription>Sign in to begin your application</CardDescription>
+            <CardDescription>Ready to begin your assessment</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" size="lg" disabled>
-              Sign in with Google
+            <Button className="w-full" size="lg">
+              Start Quiz
             </Button>
-            <p className="text-xs text-muted-foreground mt-4">
-              Authentication not yet implemented. This is a preview page.
-            </p>
           </CardContent>
         </Card>
 
@@ -51,11 +52,11 @@ export default function InvitePage({ params }: { params: { token: string } }) {
           <CardHeader>
             <CardTitle>What to Expect</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>1. Sign in with Google</p>
-            <p>2. Complete your profile in the candidate dashboard</p>
-            <p>3. Upload your resume</p>
-            <p>4. Take a technical assessment</p>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p>• Do not switch tabs or exit fullscreen mode during the assessment</p>
+            <p>• Your progress is automatically saved</p>
+            <p>• You can't skip questions and return to them later</p>
+            <p>• The assessment will auto-submit when time expires</p>
           </CardContent>
         </Card>
       </div>

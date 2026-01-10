@@ -34,30 +34,15 @@ export async function requireRecruiter() {
   return { session, recruiter: user.recruiter };
 }
 
-export async function requireCandidate() {
-  const session = await requireAuth();
+// Note: Candidate authentication removed - candidates access quizzes via unique token links (no user account)
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { candidate: true },
-  });
-
-  if (!user?.candidate) {
-    // Don't redirect to recruiter - user might not have that role either
-    redirect("/");
-  }
-
-  return { session, candidate: user.candidate };
-}
-
-export async function getUserRole(userId: string): Promise<"recruiter" | "candidate" | null> {
+export async function getUserRole(userId: string): Promise<"recruiter" | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: { recruiter: true, candidate: true },
+    include: { recruiter: true },
   });
 
   if (!user) return null;
   if (user.recruiter) return "recruiter";
-  if (user.candidate) return "candidate";
   return null;
 }

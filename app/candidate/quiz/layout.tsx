@@ -25,10 +25,10 @@ export default function QuizLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen bg-background">
       <Navbar>
         <Timer
-          numOfQuestions={20}
+          numOfQuestions={7}
           stopTimer={stopTimer}
           onTimeUp={handleTimeUp}
-          timePerQuestion={135} // 45 minutes total / 20 questions = 135 seconds per question
+          timePerQuestion={135} // ~16 minutes total / 7 questions = 135 seconds per question
         />
       </Navbar>
       <main className="container mx-auto px-4 py-8">{children}</main>

@@ -21,11 +21,10 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relations
+  // Relations - Only recruiters have user accounts
   accounts  Account[]
   sessions  Session[]
   recruiter Recruiter?
-  candidate Candidate?
 
   @@index([email])
   @@map("users")
@@ -97,114 +96,112 @@ model Recruiter {
   @@map("recruiters")
 }
 
-// Candidate table - Users who apply through invitations
-model Candidate {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  invitationId String
-  resumeText   String?  @db.Text
-  profile      Json?    // JSONB: { skills: [], experience: [], education: [], summary: "" }
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  invitation Invitation @relation(fields: [invitationId], references: [id])
-  quizzes    Quiz[]
-  attempts   Attempt[]
-
-  @@index([userId])
-  @@index([invitationId])
-  @@map("candidates")
-}
-
-// JobRole table - Job positions created by recruiters
 model JobRole {
-  id           String   @id @default(cuid())
-  title        String
-  description  String?  @db.Text
-  jdText       String?  @db.Text
-  requirements Json?    // JSONB: { skills: [], experience: "", qualifications: [], responsibilities: [] }
-  recruiterId  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  title          String
+  description    String?  @db.Text
+  jd             Json // JSONB: { rawText: "", requirements: { skills: [], experience: {}, qualifications: [], responsibilities: [] } }
+  baseQuestions  Json? // JSONB: Array of standard questions (70% of total) - reused for all candidates
+  totalQuestions Int      @default(10) // Total questions (5-25), maintains 70/30 split
+  recruiterId    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  recruiter   Recruiter    @relation("RecruiterJobRoles", fields: [recruiterId], references: [id], onDelete: Cascade)
-  invitations Invitation[]
-  quizzes     Quiz[]
+  recruiter Recruiter @relation("RecruiterJobRoles", fields: [recruiterId], references: [id], onDelete: Cascade)
+  quizzes   Quiz[]
 
   @@index([recruiterId])
-  @@index([createdAt])
+  @@index([title])
   @@map("job_roles")
 }
 
-// Invitation table - Links for candidates to apply
-model Invitation {
-  id        String    @id @default(cuid())
-  jobRoleId String
-  token     String    @unique @default(cuid())
-  expiresAt DateTime?
-  maxUses   Int?      // NULL = unlimited
-  usedCount Int       @default(0)
-  createdAt DateTime  @default(now())
+// NOTE: Invitation model removed - no longer needed with new flow
+// Recruiter uploads resume directly → creates candidate + quiz → gets unique link
 
-  jobRole    JobRole     @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
-  candidates Candidate[]
-
-  @@index([token])
-  @@index([jobRoleId])
-  @@map("invitations")
-}
-
-// Quiz table - Generated at JobRole + Candidate conjunction
+// Quiz table - Combined standard (70%) + verification (30%) questions, fully shuffled
+// Candidate info stored inline (no separate Candidate table)
 model Quiz {
-  id          String   @id @default(cuid())
-  jobRoleId   String
-  candidateId String
-  questions   Json     // JSONB: [{ id, question, options: [], correctAnswer, skill, difficulty }]
-  duration    Int      // Duration in minutes
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  jobRoleId      String
+  candidateName  String // Candidate's name (from resume upload)
+  candidateEmail String // Candidate's email (from resume upload)
+  token          String   @unique @default(cuid()) // Unique link for candidate access (no auth)
+  questions      Json // JSONB: [{ id, type: 'STANDARD' | 'RESUME_VERIFICATION', question, options: [], correctAnswer, skill, resumeClaim? }]
+  duration       Int      @default(20) // Duration in minutes
+  completed      Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
-  jobRole   JobRole   @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
-  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  attempts  Attempt[]
+  jobRole JobRole      @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
+  answers QuizAnswer[]
+  result  QuizResult?
 
-  @@unique([jobRoleId, candidateId]) // One quiz per job role-candidate pair
   @@index([jobRoleId])
-  @@index([candidateId])
+  @@index([token])
+  @@index([candidateEmail]) // For querying quizzes by candidate
   @@map("quizzes")
 }
 
-// Attempt table - Single quiz attempt by candidate (includes evaluation)
-model Attempt {
-  id              String        @id @default(cuid())
-  quizId          String
-  candidateId     String
-  startedAt       DateTime      @default(now())
-  submittedAt     DateTime?
-  responses       Json?         // JSONB: [{ questionId, selectedAnswer, timeTaken }]
-  proctoringFlags Json?         // JSONB: { tabSwitches: 0, visibilityChanges: 0, fullscreenExits: 0, timestamps: [] }
-  isComplete      Boolean       @default(false)
-  status          AttemptStatus @default(IN_PROGRESS)
+// QuizAnswer table - Stores each individual answer submitted in real-time
+model QuizAnswer {
+  id          String   @id @default(cuid())
+  quizId      String
+  questionId  String // Reference to question ID in Quiz.questions JSON
+  answer      String // Candidate's answer: "A", "B", "C", or "D"
+  isCorrect   Boolean? // Calculated when quiz is submitted
+  timeTaken   Int // Seconds spent on this question
+  submittedAt DateTime @default(now())
 
-  // Evaluation fields (populated after submission)
-  score           Float?        // Percentage score (0-100)
-  evaluationData  Json?         // JSONB: { skillBreakdown: {...}, confidenceScore: 0-100, anomalies: {...}, etc. }
-  evaluatedAt     DateTime?
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
-  quiz      Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-
-  @@unique([quizId, candidateId]) // Single attempt enforcement
+  @@unique([quizId, questionId]) // One answer per question per quiz
   @@index([quizId])
-  @@index([candidateId])
-  @@index([status])
-  @@index([score])
-  @@map("attempts")
+  @@map("quiz_answers")
 }
 
-enum AttemptStatus {
+// QuizResult table - Two-part scoring: standardScore (ranking) + verificationStatus (fraud flags)
+model QuizResult {
+  id          String    @id @default(cuid())
+  quizId      String    @unique // One result per quiz
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+
+  // Part 1: Standard Questions Score (70%) - Used for ranking
+  standardScore   Float? // Percentage: 0-100 from standard questions only
+  standardCorrect Int? // Number of correct standard answers
+  standardTotal   Int? // Total standard questions
+
+  // Part 2: Verification Status (30%) - Fraud detection (not scored)
+  verificationStatus  VerificationStatus? // VERIFIED, QUESTIONABLE, or DISCREPANCY
+  verificationCorrect Int? // Number of correct verification answers
+  verificationTotal   Int? // Total verification questions
+  verificationResults Json? // JSONB: [{ claim, question, correct }]
+
+  // Other metrics
+  skillBreakdown     Json? // JSONB: { React: 85, Node: 70 } - from standard questions only
+  confidenceScore    Float? // 0-100 based on proctoring flags
+  anomalyIndicators  Json? // JSONB: [{ type, severity, details }]
+  status             QuizResultStatus @default(IN_PROGRESS)
+  proctoringMetadata Json? // JSONB: { tabSwitches: 3, fullscreenExits: 1, events: [...] }
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([standardScore])
+  @@index([verificationStatus])
+  @@map("quiz_results")
+}
+
+enum VerificationStatus {
+  VERIFIED // ≥80% verification questions correct
+  QUESTIONABLE // 50-79% correct
+  DISCREPANCY // <50% correct
+}
+
+enum QuizResultStatus {
   IN_PROGRESS
   SUBMITTED
   EVALUATED
   EXPIRED
+  ENDED // Quiz ended due to cheating detection
 }

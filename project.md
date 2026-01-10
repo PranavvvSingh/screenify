@@ -4,20 +4,20 @@
 
 ## Executive Summary
 
-Create a quiz platform into a **recruiter-facing candidate screening system** that generates **tough, candidate-specific** technical assessments based on job requirements and resume analysis.
+Create a quiz platform into a **recruiter-facing candidate screening system** that generates **standardized + resume-verified** technical assessments based on job requirements and resume analysis.
 
-**Core Innovation**: Quiz generation happens at the **conjunction point** of Role Requirements + Candidate Profile, creating rigorous, adaptive assessments that test technical depth.
+**Core Innovation**: Two-part assessment combining standardized role-based questions (70%) with resume verification questions (30%), ensuring fair comparison while catching resume fraud.
 
-**Key Goal**: Generate challenging technical questions to identify truly skilled candidates in a competitive job market.
+**Key Goal**: Generate challenging technical questions for fair candidate comparison while verifying claimed skills, helping recruiters identify truly skilled candidates.
 
 ---
 
 ## System Flows
 
-### Recruiter Flow (Primary)
+### Recruiter Flow - Phase 1: Job Role Creation
 
 ```
-Auth
+Auth (Google OAuth)
   ↓
 Create Role (title, description)
   ↓
@@ -32,27 +32,24 @@ Convert raw text to structured requirements
 Review & Edit Requirements
 (Recruiter can modify skills, experience, etc.)
   ↓
-Save Requirements to DB
+[Ollama Cloud API]
+Generate Base Questions (70% of configurable total)
   ↓
-Generate Invite Link (role-bound)
+Save Role + Base Questions to DB
   ↓
-Share with Candidates
-  ↓
-[Wait for candidate submissions]
-  ↓
-View Dashboard (compare, shortlist)
+Role Created ✓
 ```
 
-**Key Point**: No quiz exists yet. Quiz is generated per candidate, not per role.
+**Key Point**: Base standardized questions generated from JD only. These are the same for ALL candidates applying to this role.
 
 ---
 
-### Candidate Flow (Secondary)
+### Recruiter Flow - Phase 2: Per-Candidate Quiz Setup
 
 ```
-Open Invite Link (no auth required initially)
+Select Existing Role
   ↓
-Upload Resume PDF
+Upload Candidate Resume PDF
   ↓
 [pdf.js]
 Extract raw text from PDF
@@ -60,25 +57,53 @@ Extract raw text from PDF
 [Ollama Cloud API]
 Convert raw text to structured profile
   ↓
-Store Profile to DB (no candidate review)
+[Ollama Cloud API]
+Generate Resume Verification Questions (30% of total)
+(Based on projects and tech mentioned in projects)
   ↓
-[CONJUNCTION POINT]
-Role Requirements + Candidate Profile
+Combine: Base Questions (70%) + Verification Questions (30%)
   ↓
-[Ollama Cloud API - gpt-oss:120b-cloud]
-Generate Tough Candidate-Specific Quiz
+Shuffle All Questions (fully randomized)
   ↓
-Take Quiz (timed, proctored - reuse existing)
+Generate Unique Quiz Link
+  ↓
+Share Link with Candidate (email, messaging, etc.)
+```
+
+**Key Point**: Each candidate gets a unique quiz link. Recruiter controls everything - no candidate login needed.
+
+---
+
+### Candidate Flow (No Authentication Required)
+
+```
+Receive Unique Quiz Link from Recruiter
+  ↓
+Open Link (shows role info)
+  ↓
+Click "Start Assessment"
+  ↓
+Take Quiz (timed, proctored, fullscreen)
+  ↓
+Questions appear randomized (candidate doesn't know which are verification)
   ↓
 Submit Answers
   ↓
-Auto-Evaluation
+Auto-Evaluation:
+  - Standard Questions (70%) → Ranking Score
+  - Verification Questions (30%) → Fraud Flags
   ↓
 Results sent to Recruiter Dashboard
+  ↓
+Candidate sees "Thank you" message
 ```
 
-**Key Point**: Quiz is **immutable** and **candidate-specific**. Single attempt only. No profile review by candidate.
-**Implementation**: Start with PDF only. Image support (OCR) can be added later.
+**Key Points**:
+- No candidate account needed
+- Candidate sees all questions the same way
+- Single attempt per unique link
+- 70% standard questions = fair comparison score
+- 30% verification questions = resume fraud detection (not scored)
 
 ---
 
@@ -86,7 +111,7 @@ Results sent to Recruiter Dashboard
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     DOCUMENT PROCESSING                          │
+│              PHASE 1: JOB ROLE CREATION (Recruiter)             │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  JD PDF ──────► pdf.js ──────► Raw Text ──────► Ollama Cloud    │
@@ -96,54 +121,68 @@ Results sent to Recruiter Dashboard
 │                                            Recruiter Reviews/    │
 │                                            Edits                 │
 │                                                        ↓         │
-│                                                 Save to roles    │
-│                                                 table            │
+│                                             Ollama Cloud API     │
+│                                             Generate Base        │
+│                                             Questions (70%)      │
+│                                                        ↓         │
+│                                          Save role + questions   │
+│                                          to DB (job_roles table) │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│        PHASE 2: PER-CANDIDATE QUIZ SETUP (Recruiter)            │
+├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  Resume PDF ──► pdf.js ──────► Raw Text ──────► Ollama Cloud    │
 │                                                        ↓         │
 │                                                 profile JSONB    │
+│                                          (skills from projects)  │
 │                                                        ↓         │
-│                                            Direct to candidates  │
-│                                            table (no review)     │
+│                                             Ollama Cloud API     │
+│                                             Generate Verification│
+│                                             Questions (30%)      │
+│                                             (project-based)      │
+│                                                        ↓         │
+│                                    Combine 70% + 30% + Shuffle   │
+│                                                        ↓         │
+│                                    Store complete quiz in DB     │
+│                                    Generate unique link          │
+│                                                        ↓         │
+│                                    Recruiter shares link         │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                      QUIZ GENERATION                             │
+│               PHASE 3: ASSESSMENT (Candidate)                    │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  requirements (DB) + profile (DB) ────► Build Context Prompt    │
-│                                                 ↓                │
-│                                    Ollama Cloud API              │
-│                                    (gpt-oss:120b-cloud)          │
-│                                    ("Generate TOUGH questions")  │
-│                                                 ↓                │
-│                                    questions JSONB               │
-│                                                 ↓                │
-│                                    Store in quizzes table        │
-│                                    (immutable)                   │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                   ASSESSMENT & EVALUATION                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Candidate Takes Quiz ────► Proctoring (fullscreen, tab detect) │
+│  Candidate clicks link ────► No login required                  │
+│         ↓                                                        │
+│  Start Quiz ────► Proctoring (fullscreen, tab detect)           │
+│         ↓                                                        │
+│  Answer Questions ────► All appear identical                     │
+│  (Standard 70% + Verification 30% fully mixed)                   │
 │         ↓                                                        │
 │  Submit Responses ────► Auto-Evaluation Engine                   │
 │         ↓                        ↓                               │
-│  Store in attempts        Store in evaluations                   │
-│  (responses, flags)       (score, skill_breakdown, confidence)   │
+│  Store answers          Standard Q's → Ranking Score (0-100)    │
+│  + proctoring flags     Verification Q's → Fraud Flags           │
 │                                  ↓                               │
 │                         Recruiter Dashboard                      │
-│                         (compare, shortlist)                     │
+│                         (compare scores + flags)                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## The Conjunction Point
+## The Two-Part Assessment System
 
 This is where the magic happens:
+
+### Part 1: Standardized Questions (70% of total)
+
+**Generated at:** Role creation (Phase 1)
+**Input:** Job Description requirements only
+**Purpose:** Fair comparison across all candidates
 
 ```
 Inputs:
@@ -151,31 +190,67 @@ Inputs:
     • required_skills: ['React', 'Node.js', 'PostgreSQL']
     • experience: {min: 3, max: 5}
     • responsibilities: [...]
-    • qualifications: [...]
-
-  - Candidate Profile (from DB)
-    • skills: ['React', 'TypeScript', 'MongoDB']
-    • experience: [{company, role, duration, description}, ...]
-    • education: [...]
-    • total_experience_years: 4
 
 Process:
-  1. Build context-aware prompt for Ollama
-  2. Request tough technical questions
-  3. Include role requirements + candidate background
-  4. Generate 15-20 questions
+  1. Ollama generates N×0.7 tough technical questions
+  2. Based ONLY on job requirements
+  3. Tests depth in required skills
+  4. These questions are reused for ALL candidates
 
 Output:
-  - Candidate-specific quiz (JSON)
-  - Stored immutably in quizzes table
-  - Bound to single attempt
+  - Base questions stored in job_roles.baseQuestions
+  - Same for every candidate applying to this role
 ```
 
-**Why Candidate-Specific?**
-- Adaptive difficulty (based on candidate's experience level)
-- Tests required skills in context of candidate's background
-- Prevents question leakage (each candidate gets unique quiz)
-- Tougher assessment (no preparation possible)
+### Part 2: Resume Verification Questions (30% of total)
+
+**Generated at:** Per-candidate quiz setup (Phase 2)
+**Input:** Candidate's resume (projects and tech stack)
+**Purpose:** Verify claimed skills and catch resume fraud
+
+```
+Inputs:
+  - Candidate Resume (parsed)
+    • projects: [{name, tech_stack, description}, ...]
+    • skills_mentioned: ['Kafka', 'Kubernetes', 'React']
+    • claimed_experience: 4 years
+
+Process:
+  1. Ollama generates N×0.3 verification questions
+  2. Based on projects and tech mentioned IN projects
+  3. Focus on depth, not breadth
+  4. Questions like: "You mentioned Kafka in Project X. Explain consumer groups."
+
+Output:
+  - Verification questions specific to this candidate
+  - Mixed with base questions and shuffled
+```
+
+### Combined Quiz Structure
+
+```
+Total Questions: N (configurable, 5-25, default 10)
+  ├─ Standard (70%): 7 questions (from JD)
+  └─ Verification (30%): 3 questions (from resume projects)
+
+Candidate sees: All 10 questions fully randomized, no visual distinction
+
+Scoring:
+  ├─ Standard questions → Ranking Score (0-100) ← Used for comparison
+  └─ Verification questions → Fraud Flags (✅/⚠️/🚩) ← Not scored
+
+Recruiter Dashboard:
+  Candidate A: 87% ranking, ✅ Verified
+  Candidate B: 92% ranking, ⚠️ Questionable (Kafka claim suspect)
+  Candidate C: 79% ranking, 🚩 Discrepancy (Multiple failed verifications)
+```
+
+**Why This Approach?**
+- **Fair Comparison**: All candidates judged on same 70% standard questions
+- **Fraud Detection**: 30% verification catches resume inflation
+- **Depth Testing**: Resume questions focus on projects, not just keywords
+- **No Gaming**: Candidates don't know which questions are which
+- **Actionable**: Recruiter can probe questionable claims in interviews
 
 ---
 
@@ -778,11 +853,12 @@ We chose a **client-side extraction + single AI provider** approach:
 - Use case: When OCR or image-based resumes are needed
 - Deferred to post-MVP phase
 
-### Why Candidate-Specific Quizzes?
-- **Fairness**: Adaptive difficulty based on experience
-- **Security**: No question leakage between candidates
-- **Relevance**: Tests claimed skills vs role needs
-- **Comparison**: All assessed against same requirements, different execution
+### Why 70/30 Split (Standard vs Verification)?
+- **Fair Comparison**: 70% standard questions = apples-to-apples ranking
+- **Fraud Detection**: 30% verification catches resume inflation without affecting score
+- **No Gaming**: Candidates can't optimize resumes for easier questions
+- **Actionable**: Flags give recruiters specific talking points for interviews
+- **Legally Safe**: Ranking based on objective, consistent criteria
 
 ### Why pdf.js + Ollama Cloud?
 - **Zero Extraction Cost**: pdf.js runs in browser, no server costs
@@ -809,6 +885,15 @@ We chose a **client-side extraction + single AI provider** approach:
 - **RLS (Row-Level Security)**: Built-in multi-tenant data isolation
 - **Performance**: Efficient indexing for skill matching and filtering
 - **Ecosystem**: Works with any client library (Prisma, Drizzle, etc.)
+
+### Why No Candidate Authentication?
+- **Zero Friction**: Candidates just click link and start quiz (higher completion rate)
+- **Simpler Flow**: No signup, no login, no password recovery
+- **Recruiter Control**: Recruiter has both JD and resume, controls entire process
+- **Unique Links**: Each quiz link is unique and single-use
+- **Less Code**: No candidate auth, no candidate dashboard, no profile management
+- **Faster MVP**: Significantly reduces implementation complexity
+- **Security**: Proctoring still works (fullscreen, tab detection, timing)
 
 ---
 
@@ -841,19 +926,22 @@ We chose a **client-side extraction + single AI provider** approach:
 
 This repurposing transforms QuizMe into a **recruiter-centric hiring pipeline** with:
 
-✅ **Candidate-Specific Tough Quizzes** at the conjunction of Role + Resume
+✅ **Two-Part Assessment System** (70% standard + 30% verification for fair comparison)
+✅ **No Candidate Authentication** (unique quiz links, no login required)
+✅ **Recruiter-Controlled Flow** (recruiter uploads both JD and resumes)
 ✅ **Single AI Provider** (Ollama Cloud for all LLM operations)
 ✅ **Client-Side PDF Processing** (pdf.js, no file storage costs)
-✅ **Recruiter-Editable Requirements** (manual review after extraction)
-✅ **Immutable, Auditable Assessments** (single attempt per candidate)
+✅ **Standardized Scoring** (70% questions ensure fair candidate comparison)
+✅ **Resume Fraud Detection** (30% verification questions flag suspicious claims)
+✅ **Project-Based Verification** (questions derived from tech in actual projects)
+✅ **Configurable Question Count** (5-25 questions, maintains 70/30 split)
+✅ **Immutable, Auditable Assessments** (single attempt per unique link)
 ✅ **Reused Proctoring Infrastructure** (full-screen, tab detection)
-✅ **Auto-Evaluation with Skill Breakdown**
-✅ **Actionable Recruiter Dashboard** (compare, shortlist, insights)
+✅ **Qualitative Fraud Flags** (✅/⚠️/🚩 indicators, not scored)
+✅ **Actionable Recruiter Dashboard** (compare scores + review flags)
 ✅ **PostgreSQL with JSONB** (flexible schema, RLS for security)
-✅ **Rigorous Assessment via Prompt Engineering** (tough technical questions)
-✅ **Scalable Schema** (ready for subjective/code questions)
 ✅ **No File Storage** (PDFs processed and discarded, only structured data persisted)
 
-**The Core Innovation**: Quiz generation happens AFTER candidate applies, creating truly adaptive, rigorous assessments that test technical depth. Questions are tailored to be challenging based on role requirements and candidate background.
+**The Core Innovation**: Combines the fairness of standardized assessment (70%) with the intelligence of resume verification (30%), ensuring candidates are ranked objectively while catching resume fraud. Verification questions don't affect ranking but flag suspicious claims for interview follow-up.
 
-**Technical Simplicity**: pdf.js (browser) → raw text → Ollama Cloud → structured JSON → PostgreSQL. Single AI provider, no file storage, client-side processing.
+**Technical Simplicity**: pdf.js (browser) → raw text → Ollama Cloud → structured JSON → PostgreSQL. Single AI provider, no file storage, client-side processing. No candidate authentication needed.

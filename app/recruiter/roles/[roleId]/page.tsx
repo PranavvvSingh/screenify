@@ -15,7 +15,7 @@ export default function RoleDetailPage({ params }: { params: { roleId: string } 
           <p className="text-muted-foreground mt-1">Role ID: {params.roleId}</p>
         </div>
         <Button variant="outline">Edit Requirements</Button>
-        <Button>Generate Invite Link</Button>
+        <Button>Add Candidate</Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -66,6 +66,15 @@ export default function RoleDetailPage({ params }: { params: { roleId: string } 
               <h3 className="font-semibold mb-2">Experience</h3>
               <p className="text-sm text-muted-foreground">5+ years</p>
             </div>
+            <div>
+              <h3 className="font-semibold mb-2">Quiz Configuration</h3>
+              <p className="text-sm text-muted-foreground">
+                Total Questions: <span className="font-semibold text-foreground">10</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                70% standard questions (7), 30% resume verification (3)
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -78,7 +87,7 @@ export default function RoleDetailPage({ params }: { params: { roleId: string } 
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <p>No candidates yet</p>
-            <p className="text-sm mt-2">Share the invitation link to get started</p>
+            <p className="text-sm mt-2">Upload candidate resumes to get started</p>
           </div>
         </CardContent>
       </Card>

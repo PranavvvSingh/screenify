@@ -17,12 +17,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/", request.url));
     }
 
-    // Check if user already has a role
+    // Check if user already has a recruiter record
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
         recruiter: true,
-        candidate: true,
       },
     });
 
@@ -31,12 +30,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/recruiter", request.url));
     }
 
-    // If user already has a candidate role, redirect to candidate dashboard
-    if (user?.candidate) {
-      return NextResponse.redirect(new URL("/candidate", request.url));
-    }
-
     // User has no role yet - create recruiter record automatically
+    // Note: Only recruiters have user accounts (candidates access via token links)
     await prisma.recruiter.create({
       data: {
         userId: session.user.id,

@@ -1,18 +1,12 @@
-import { requireCandidate } from "@/lib/auth-utils";
-import { redirect } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 
-export default async function CandidateLayout({
+// Note: No authentication required for candidates
+// Candidates access quizzes via unique token links (validated in individual pages)
+export default function CandidateLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  try {
-    await requireCandidate();
-  } catch {
-    redirect("/");
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

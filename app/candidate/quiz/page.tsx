@@ -2,26 +2,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 
 export default function QuizPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-foreground">Technical Assessment</h1>
-        <p className="text-muted-foreground">Question 1 of 20</p>
+        <p className="text-muted-foreground">Question 1 of 7</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-4">
         <div className="lg:col-span-3 space-y-6">
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <Badge>React</Badge>
-                <Badge variant="secondary">Medium</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4">
                   What is the purpose of the useEffect hook in React?
@@ -56,23 +49,8 @@ export default function QuizPage() {
 
               <div className="flex justify-between">
                 <Button variant="outline">Previous</Button>
-                <div className="flex gap-3">
-                  <Button variant="outline">Skip</Button>
-                  <Button>Next Question</Button>
-                </div>
+                <Button>Next Question</Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Important Notes</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>• Do not switch tabs or exit fullscreen mode during the assessment</p>
-              <p>• Your progress is automatically saved</p>
-              <p>• You can't skip questions and return to them later</p>
-              <p>• The assessment will auto-submit when time expires</p>
             </CardContent>
           </Card>
         </div>
@@ -86,7 +64,7 @@ export default function QuizPage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Answered</span>
-                  <span className="font-semibold">0/20</span>
+                  <span className="font-semibold">0/7</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full">
                   <div className="h-full bg-primary rounded-full" style={{ width: "0%" }}></div>
@@ -100,8 +78,8 @@ export default function QuizPage() {
               <CardTitle className="text-sm">Question Navigator</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-5 gap-2">
-                {Array.from({ length: 20 }, (_, i) => (
+              <div className="grid grid-cols-4 gap-2">
+                {Array.from({ length: 7 }, (_, i) => (
                   <button
                     key={i}
                     className="aspect-square rounded border border-border hover:bg-accent text-sm font-semibold"

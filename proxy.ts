@@ -11,7 +11,8 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/api/auth", "/api/auth-callback", "/invite"];
+  // Note: /candidate routes are also public (token-based access, no auth required)
+  const publicRoutes = ["/", "/api/auth", "/api/auth-callback", "/invite", "/candidate"];
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
   // If not authenticated and trying to access protected route
@@ -20,35 +21,22 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Role-based routing
+  // Role-based routing (only for authenticated users)
+  // Note: Only recruiters have user accounts; candidates access via token links
   if (session) {
-    // Check if user is recruiter or candidate
+    // Check if user is recruiter
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         recruiter: { select: { id: true } },
-        candidate: { select: { id: true } },
       },
     });
 
     const isRecruiter = !!user?.recruiter;
-    const isCandidate = !!user?.candidate;
 
     // If user has no role yet and not on auth callback, redirect to auth callback
-    if (!isRecruiter && !isCandidate && pathname !== "/api/auth-callback" && !isPublicRoute) {
+    if (!isRecruiter && pathname !== "/api/auth-callback" && !isPublicRoute) {
       const url = new URL("/api/auth-callback", request.url);
-      return NextResponse.redirect(url);
-    }
-
-    // Recruiter trying to access candidate routes
-    if (isRecruiter && pathname.startsWith("/candidate")) {
-      const url = new URL("/recruiter", request.url);
-      return NextResponse.redirect(url);
-    }
-
-    // Candidate trying to access recruiter routes
-    if (isCandidate && pathname.startsWith("/recruiter")) {
-      const url = new URL("/candidate", request.url);
       return NextResponse.redirect(url);
     }
   }

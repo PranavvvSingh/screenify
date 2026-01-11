@@ -256,174 +256,46 @@ Recruiter Dashboard:
 
 ## Tech Stack
 
-| Component | Current | New |
-|-----------|---------|-----|
-| **Auth** | GitHub OAuth | Google OAuth (Better Auth) |
-| **User Model** | Single type | RBAC: Recruiter / Candidate |
-| **AI Provider** | N/A | **Ollama Cloud API (gpt-oss:120b-cloud)** with API key |
-| **AI - Doc Parse** | N/A | Ollama Cloud (text → structured JSON) |
-| **AI - Quiz Gen** | N/A | Ollama Cloud (same model, same API) |
-| **Doc Processing** | N/A | **pdf.js** (client-side PDF text extraction, PDFs not stored) |
-| **Database** | N/A | PostgreSQL (structured data only: requirements, profiles, quizzes) |
-| **Quiz Scope** | User-generated topics | Tough, role + candidate adaptive |
-| **Evaluation** | Self-scoring | Auto-eval + Recruiter dashboard |
+| Component | Technology |
+|-----------|------------|
+| **Framework** | Next.js 16 (App Router) |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS + shadcn/ui |
+| **Auth** | Better Auth (Google OAuth) - Recruiters only |
+| **AI Provider** | Ollama Cloud API (model configurable via `OLLAMA_CLOUD_MODEL` env var) |
+| **AI - Doc Parse** | Ollama Cloud (text → structured JSON) |
+| **AI - Quiz Gen** | Ollama Cloud (same model, same API) |
+| **Doc Processing** | pdf.js (client-side PDF text extraction, PDFs not stored) |
+| **Database** | PostgreSQL with Prisma ORM |
+| **Evaluation** | Auto-eval + Recruiter dashboard |
 
 **Note**: Gemini Vision API documented as alternative (not implemented initially).
 
 ---
 
-## Database Schema (From Scratch)
+## Database Schema
 
-### Core Tables
+See `prisma/schema.prisma` for the complete schema definition.
 
-```sql
--- Users (extend existing or create)
-users (
-  id UUID PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
-  name TEXT,
-  role TEXT CHECK (role IN ('RECRUITER', 'CANDIDATE')),
-  auth_provider TEXT,
-  created_at TIMESTAMP
-)
+### Key Tables
 
--- Roles (Job Positions)
-roles (
-  id UUID PRIMARY KEY,
-  recruiter_id UUID → users(id),
-  title TEXT NOT NULL,
-  jd_file_url TEXT,
-  requirements JSONB, -- extracted/edited by recruiter
-  status TEXT DEFAULT 'ACTIVE', -- ACTIVE, CLOSED
-  created_at TIMESTAMP
-)
-
--- Requirements JSONB Structure:
-{
-  required_skills: ['React', 'Node.js'],
-  preferred_skills: ['GraphQL'],
-  experience: {min: 3, max: 5, unit: 'years'},
-  responsibilities: ['Build APIs', 'Write tests'],
-  qualifications: ['CS Degree or equivalent']
-}
-
--- Invitations (Role-bound links)
-invitations (
-  id UUID PRIMARY KEY,
-  role_id UUID → roles(id),
-  token TEXT UNIQUE NOT NULL, -- unique invite link token
-  status TEXT DEFAULT 'ACTIVE', -- ACTIVE, USED, EXPIRED
-  max_uses INTEGER DEFAULT NULL, -- null = unlimited
-  current_uses INTEGER DEFAULT 0,
-  expires_at TIMESTAMP DEFAULT NULL,
-  created_at TIMESTAMP
-)
-
--- Candidates
-candidates (
-  id UUID PRIMARY KEY,
-  invitation_id UUID → invitations(id),
-  role_id UUID → roles(id),
-  email TEXT NOT NULL,
-  resume_file_url TEXT,
-  profile JSONB, -- extracted from resume
-  status TEXT DEFAULT 'INVITED', -- INVITED, IN_PROGRESS, SUBMITTED, SHORTLISTED, REJECTED
-  created_at TIMESTAMP,
-  UNIQUE(email, role_id)
-)
-
--- Profile JSONB Structure:
-{
-  name: 'John Doe',
-  email: 'john@example.com',
-  phone: '+1234567890',
-  skills: ['React', 'TypeScript'],
-  experience: [
-    {company: 'TechCorp', role: 'Frontend Dev', duration: '2020-2023', description: '...'}
-  ],
-  education: [{degree: 'BS CS', institution: 'MIT', year: '2020'}],
-  total_experience_years: 4
-}
-
--- Quizzes (Candidate-specific, immutable)
-quizzes (
-  id UUID PRIMARY KEY,
-  candidate_id UUID → candidates(id) UNIQUE, -- one quiz per candidate
-  role_id UUID → roles(id),
-  questions JSONB NOT NULL,
-  metadata JSONB, -- generation context, difficulty, skill distribution
-  generated_at TIMESTAMP,
-  UNIQUE(candidate_id) -- enforce one quiz per candidate
-)
-
--- Questions JSONB Structure:
-[
-  {
-    id: 'q1',
-    question: 'What is React Fiber?',
-    options: ['A', 'B', 'C', 'D'],
-    correct_index: 0,
-    skill: 'React',
-    difficulty: 'medium',
-    type: 'mcq' -- mcq, subjective (future), code (future)
-  }
-]
-
--- Attempts (single per candidate)
-attempts (
-  id UUID PRIMARY KEY,
-  candidate_id UUID → candidates(id) UNIQUE, -- single attempt
-  quiz_id UUID → quizzes(id),
-  started_at TIMESTAMP,
-  submitted_at TIMESTAMP,
-  time_allocated INTEGER, -- seconds
-  responses JSONB,
-  proctoring_flags JSONB DEFAULT '[]',
-  status TEXT DEFAULT 'IN_PROGRESS' -- IN_PROGRESS, SUBMITTED, TERMINATED
-)
-
--- Responses JSONB Structure:
-[
-  {
-    question_id: 'q1',
-    selected_index: 0,
-    time_spent: 45 -- seconds
-  }
-]
-
--- Proctoring Flags:
-[
-  {type: 'tab_switch', timestamp: '2024-01-15T10:23:45Z', duration: 12},
-  {type: 'fullscreen_exit', timestamp: '2024-01-15T10:25:10Z'}
-]
-
--- Evaluations (auto-generated after submission)
-evaluations (
-  id UUID PRIMARY KEY,
-  attempt_id UUID → attempts(id) UNIQUE,
-  candidate_id UUID → candidates(id),
-  score DECIMAL(5,2) NOT NULL, -- 0-100
-  skill_breakdown JSONB, -- {React: 80, Node.js: 70}
-  confidence_score DECIMAL(5,2), -- based on proctoring flags
-  anomaly_indicators JSONB DEFAULT '[]',
-  evaluated_at TIMESTAMP
-)
-
--- Anomaly Indicators:
-[
-  {type: 'suspiciously_fast', question_ids: ['q3', 'q7'], severity: 'low'},
-  {type: 'pattern_anomaly', description: 'all correct in last 30s', severity: 'high'}
-]
-```
+| Table | Purpose |
+|-------|---------|
+| **User** | Better Auth users (recruiters only) |
+| **Recruiter** | Links user to their created job roles |
+| **JobRole** | Job positions with JD requirements + base questions (70%) |
+| **Quiz** | Per-candidate quiz with candidate info, combined questions, and unique token |
+| **QuizAnswer** | Individual answer submissions with timing |
+| **QuizResult** | Two-part scoring: standardScore (ranking) + verificationStatus (fraud) |
 
 ### Key Schema Decisions
 
-1. **No Organizations (for now)**: Simplify to recruiter → roles → candidates. Multi-tenancy can be added later.
-2. **Invitation-based**: No candidate accounts until they accept invite.
-3. **One Quiz per Candidate**: Enforced via UNIQUE constraint on `quizzes.candidate_id`.
-4. **Single Attempt**: Enforced via UNIQUE constraint on `attempts.candidate_id`.
-5. **Immutability**: Quizzes and attempts are never updated after creation.
-6. **JSONB for Flexibility**: Requirements, profiles, questions stored as JSON for easy iteration.
+1. **No Separate Candidate Table**: Candidate info (name, email) stored inline in Quiz
+2. **No Invitation Table**: Recruiter creates quiz directly, gets unique token link
+3. **Base Questions in JobRole**: 70% standard questions stored in `JobRole.baseQuestions`, reused for all candidates
+4. **Combined Questions in Quiz**: `Quiz.questions` contains shuffled 70% + 30% with type field
+5. **Two-Part Scoring**: QuizResult has `standardScore` for ranking + `verificationStatus` for fraud flags
+6. **JSONB for Flexibility**: JD, questions, answers, and metrics stored as JSON
 
 ---
 
@@ -678,74 +550,69 @@ Make this assessment challenging. The job market is competitive and we need to i
 
 ## Implementation Phases
 
-### Phase 1: Core Infrastructure (Week 1)
+### Phase 1: Core Infrastructure ✅
 - PostgreSQL database schema setup
-- Auth with RBAC (recruiter/candidate roles)
-- Basic UI scaffolding (recruiter/candidate dashboards)
+- Better Auth with Google OAuth (recruiters only)
+- Basic UI scaffolding with shadcn/ui
 - Client-side file upload UI (PDFs not persisted)
 
-### Phase 2: Document Intelligence (Week 2)
+### Phase 2: Document Intelligence ✅
 - pdf.js integration (client-side PDF text extraction)
 - Ollama Cloud API integration
 - JD extraction (pdf.js → raw text → Ollama → structured JSON)
-- Editable review UI for recruiters
-- Resume extraction (pdf.js → raw text → Ollama → structured JSON, direct to DB)
-- JSON response parsing and validation
+- Editable review UI for recruiters (inline editing during role creation)
+- Resume extraction function ready (Ollama API call implemented)
 
-### Phase 3: Quiz Generation (Week 3)
-- Context-aware prompt engineering for tough questions
-- Quiz generation via Ollama Cloud (same API as extraction)
-- Quiz JSON parsing and validation
-- Quiz storage and immutability enforcement
+### Phase 3: Role + Base Questions ✅
+- Role creation form with PDF import
+- Base question generation (70%) via Ollama Cloud
+- Questions stored in JobRole.baseQuestions
 
-### Phase 4: Assessment & Proctoring (Week 4)
-- Adapt existing quiz UI for candidate flow
-- Invitation link system
-- Single-attempt enforcement
-- Proctoring flag collection
+### Phase 4: Per-Candidate Quiz Setup (Pending)
+- Resume upload and profile extraction
+- Verification question generation (30%) from resume projects
+- Combine 70% + 30% questions, shuffle, create Quiz
+- Generate unique token link
 
-### Phase 5: Evaluation & Dashboard (Week 5)
-- Auto-evaluation engine (MCQ scoring)
-- Skill breakdown calculation
-- Confidence scoring + anomaly detection
+### Phase 5: Candidate Assessment (Pending)
+- Token-based quiz access (no auth)
+- Quiz taking interface
+- Proctoring (fullscreen, tab detection)
+- Answer submission with timing
+
+### Phase 6: Evaluation & Dashboard (Pending)
+- Auto-evaluation engine with two-part scoring
+- Standard score (ranking) from 70% questions
+- Verification status (fraud flags) from 30% questions
 - Recruiter dashboard (list, detail, comparison)
-
-### Phase 6: Polish & Launch (Week 6)
-- Email notifications (invite, submission)
-- Onboarding flows
-- Error handling and edge cases
-- Security audit (RLS policies, file access controls)
 
 ---
 
 ## API Endpoints
 
-### Recruiter APIs
+### Implemented ✅
 ```
-POST   /api/role                          Create role
-POST   /api/role/:id/jd-upload            Upload & extract JD
-PUT    /api/role/:id/requirements         Update requirements (manual edit)
-POST   /api/role/:id/invite               Generate invite link
-GET    /api/role/:id/candidates           List candidates
-GET    /api/candidate/:id                 Candidate details
-POST   /api/candidate/:id/shortlist       Shortlist action
-POST   /api/candidate/:id/reject          Reject action
-GET    /api/dashboard/:roleId             Dashboard data
+POST   /api/auth/[...all]                 Better Auth (Google OAuth)
+GET    /api/auth-callback                 Post-OAuth auto-creates recruiter
+POST   /api/role/extract-jd               Extract JD requirements from text
+POST   /api/role/create                   Create role + generate base questions
 ```
 
-### Candidate APIs
+### Pending (Recruiter APIs)
 ```
-GET    /api/invite/:token                 Validate invite, get role details
-POST   /api/invite/:token/resume          Upload resume & extract profile
-GET    /api/candidate/quiz                Get generated quiz (after resume)
-POST   /api/quiz/start                    Start attempt (log start time)
-POST   /api/quiz/submit                   Submit responses + proctoring flags
+POST   /api/role/:id/add-candidate        Upload resume, generate quiz, return token
+GET    /api/role/:id/candidates           List candidates for a role
+GET    /api/quiz/:id/results              Get quiz results for recruiter
+POST   /api/quiz/:id/shortlist            Shortlist candidate
+POST   /api/quiz/:id/reject               Reject candidate
 ```
 
-### Shared
+### Pending (Candidate APIs)
 ```
-POST   /api/auth/[...all]                 OAuth (Google)
-GET    /api/user/me                       Current user profile
+GET    /api/quiz/token/:token             Validate token, get quiz info
+POST   /api/quiz/token/:token/start       Start quiz attempt
+POST   /api/quiz/token/:token/answer      Submit single answer
+POST   /api/quiz/token/:token/submit      Submit quiz + trigger evaluation
 ```
 
 ---
@@ -780,30 +647,6 @@ GET    /api/user/me                       Current user profile
 - OAuth (Google) via Better Auth
 - Role-based access control (RBAC)
 - Invitation tokens (UUID, single-use or time-limited)
-
-### Data Storage
-- PostgreSQL with row-level security (RLS)
-- Only structured JSON persisted (no PDF files stored)
-- Data scoped to user/role (RLS policies)
-
-### Data Privacy
-- Encrypt PII in JSONB fields (email, phone) at rest
-- No persistent storage of raw uploaded files (only parsed data)
-- GDPR-compliant deletion (cascade delete on user)
-
-### RLS Policies
-```sql
--- Recruiters see only their roles and candidates
-CREATE POLICY recruiter_access ON candidates
-  FOR SELECT USING (
-    role_id IN (SELECT id FROM roles WHERE recruiter_id = auth.uid())
-  );
-
--- Candidates see only their own data
-CREATE POLICY candidate_self_access ON candidates
-  FOR SELECT USING (email = auth.email());
-```
-
 ---
 
 ## Future Enhancements (Post-MVP)
@@ -869,31 +712,9 @@ We chose a **client-side extraction + single AI provider** approach:
 - **MVP-Friendly**: Start with PDFs, add OCR later if needed
 
 ### Why Prompt Engineering Over Algorithmic Distribution?
-- **Simplicity**: Let the LLM (Ollama) handle question difficulty naturally
-- **Flexibility**: Easy to adjust toughness by tweaking prompt keywords
-- **Quality**: LLMs understand "tough" and "rigorous" semantically
-- **Less Code**: No complex skill-matching or gap-analysis algorithms
-- **Maintainable**: Prompt iteration is faster than code changes
-
-### Why No Organizations in MVP?
-- **Simplicity**: Single recruiter workflow first
-- **Faster MVP**: Reduce schema complexity
-- **Easy Addition**: Can add later without migration pain
-
-### Why PostgreSQL?
-- **JSONB Support**: Flexible schema for requirements, profiles, questions
-- **RLS (Row-Level Security)**: Built-in multi-tenant data isolation
-- **Performance**: Efficient indexing for skill matching and filtering
-- **Ecosystem**: Works with any client library (Prisma, Drizzle, etc.)
-
+- simplicity, flexibility, quality
 ### Why No Candidate Authentication?
-- **Zero Friction**: Candidates just click link and start quiz (higher completion rate)
-- **Simpler Flow**: No signup, no login, no password recovery
-- **Recruiter Control**: Recruiter has both JD and resume, controls entire process
-- **Unique Links**: Each quiz link is unique and single-use
-- **Less Code**: No candidate auth, no candidate dashboard, no profile management
-- **Faster MVP**: Significantly reduces implementation complexity
-- **Security**: Proctoring still works (fullscreen, tab detection, timing)
+- zero friction, simpler flow, less code, master mvp
 
 ---
 
@@ -905,42 +726,47 @@ We chose a **client-side extraction + single AI provider** approach:
 - Evaluation processing: <5s
 - Dashboard load time: <2s
 
-### Business
-- Recruiter time saved: 50% reduction in initial screening
-- Candidate completion rate: >70%
-- False positive rate: <20% (shortlisted but rejected post-interview)
-
 ---
 
-## Next Steps
+## Current Progress
 
-1. **Finalize Database Schema**: Review and approve table structures (PostgreSQL)
-2. **Set up Ollama Cloud API**: Configure API key for gpt-oss:120b-cloud model
-3. **Test pdf.js Integration**: Verify client-side PDF text extraction works
-4. **Design UI Mockups**: Recruiter dashboard, candidate flow screens
-5. **Phase 1 Kickoff**: Auth + DB + PDF Upload UI implementation
+### Completed ✅
+- Database schema (Prisma) with all tables
+- Better Auth with Google OAuth
+- Ollama Cloud API integration (all 4 functions)
+- PDF.js client-side extraction
+- Role creation with JD upload and base question generation
+- Recruiter dashboard showing roles
+
+### Next Steps
+1. **Per-Candidate Quiz Setup**: Build resume upload API, generate verification questions, create quiz with token
+2. **Candidate Quiz Flow**: Token-based access, quiz interface, answer submission
+3. **Proctoring**: Fullscreen enforcement, tab switch detection
+4. **Evaluation Engine**: Two-part scoring, skill breakdown, anomaly detection
+5. **Recruiter Results Dashboard**: View scores, verification flags, compare candidates
 
 ---
 
 ## Summary
 
-This repurposing transforms QuizMe into a **recruiter-centric hiring pipeline** with:
+Screenify is a **recruiter-centric hiring pipeline** with:
 
-✅ **Two-Part Assessment System** (70% standard + 30% verification for fair comparison)
-✅ **No Candidate Authentication** (unique quiz links, no login required)
-✅ **Recruiter-Controlled Flow** (recruiter uploads both JD and resumes)
-✅ **Single AI Provider** (Ollama Cloud for all LLM operations)
-✅ **Client-Side PDF Processing** (pdf.js, no file storage costs)
-✅ **Standardized Scoring** (70% questions ensure fair candidate comparison)
-✅ **Resume Fraud Detection** (30% verification questions flag suspicious claims)
-✅ **Project-Based Verification** (questions derived from tech in actual projects)
-✅ **Configurable Question Count** (5-25 questions, maintains 70/30 split)
-✅ **Immutable, Auditable Assessments** (single attempt per unique link)
-✅ **Reused Proctoring Infrastructure** (full-screen, tab detection)
-✅ **Qualitative Fraud Flags** (✅/⚠️/🚩 indicators, not scored)
-✅ **Actionable Recruiter Dashboard** (compare scores + review flags)
-✅ **PostgreSQL with JSONB** (flexible schema, RLS for security)
-✅ **No File Storage** (PDFs processed and discarded, only structured data persisted)
+### Implemented
+- Two-Part Assessment System (70% standard + 30% verification for fair comparison)
+- No Candidate Authentication (unique quiz links, no login required)
+- Recruiter-Controlled Flow (recruiter uploads both JD and resumes)
+- Single AI Provider (Ollama Cloud for all LLM operations)
+- Client-Side PDF Processing (pdf.js, no file storage costs)
+- Configurable Question Count (5-25 questions, maintains 70/30 split)
+- PostgreSQL with Prisma ORM
+
+### Planned
+- Standardized Scoring (70% questions ensure fair candidate comparison)
+- Resume Fraud Detection (30% verification questions flag suspicious claims)
+- Project-Based Verification (questions derived from tech in actual projects)
+- Proctoring (full-screen, tab detection)
+- Qualitative Fraud Flags (VERIFIED/QUESTIONABLE/DISCREPANCY indicators)
+- Actionable Recruiter Dashboard (compare scores + review flags)
 
 **The Core Innovation**: Combines the fairness of standardized assessment (70%) with the intelligence of resume verification (30%), ensuring candidates are ranked objectively while catching resume fraud. Verification questions don't affect ranking but flag suspicious claims for interview follow-up.
 

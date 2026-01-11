@@ -1,5 +1,3 @@
-// Prisma schema for Screenify - AI-Powered Candidate Screening Platform
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,7 +9,6 @@ datasource db {
 // ============================================
 // AUTH DOMAIN (Better Auth)
 // ============================================
-
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
@@ -21,7 +18,6 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relations - Only recruiters have user accounts
   accounts  Account[]
   sessions  Session[]
   recruiter Recruiter?
@@ -30,7 +26,6 @@ model User {
   @@map("users")
 }
 
-// Better Auth Account model
 model Account {
   id                    String    @id @default(cuid())
   accountId             String
@@ -116,16 +111,11 @@ model JobRole {
   @@map("job_roles")
 }
 
-// NOTE: Invitation model removed - no longer needed with new flow
-// Recruiter uploads resume directly → creates candidate + quiz → gets unique link
-
-// Quiz table - Combined standard (70%) + verification (30%) questions, fully shuffled
-// Candidate info stored inline (no separate Candidate table)
 model Quiz {
   id             String   @id @default(cuid())
   jobRoleId      String
-  candidateName  String // Candidate's name (from resume upload)
-  candidateEmail String // Candidate's email (from resume upload)
+  candidateName  String 
+  candidateEmail String 
   token          String   @unique @default(cuid()) // Unique link for candidate access (no auth)
   questions      Json // JSONB: [{ id, type: 'STANDARD' | 'RESUME_VERIFICATION', question, options: [], correctAnswer, skill }]
   duration       Int      @default(20) // Duration in minutes
@@ -138,28 +128,26 @@ model Quiz {
 
   @@index([jobRoleId])
   @@index([token])
-  @@index([candidateEmail]) // For querying quizzes by candidate
+  @@index([candidateEmail])
   @@map("quizzes")
 }
 
-// QuizAnswer table - Stores each individual answer submitted in real-time
 model QuizAnswer {
   id          String   @id @default(cuid())
   quizId      String
-  questionId  String // Reference to question ID in Quiz.questions JSON
-  answer      String // Candidate's answer: "A", "B", "C", or "D"
-  isCorrect   Boolean? // Calculated when quiz is submitted
-  timeTaken   Int // Seconds spent on this question
+  questionId  String 
+  answer      String
+  isCorrect   Boolean?
+  timeTaken   Int
   submittedAt DateTime @default(now())
 
   quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
-  @@unique([quizId, questionId]) // One answer per question per quiz
+  @@unique([quizId, questionId])
   @@index([quizId])
   @@map("quiz_answers")
 }
 
-// QuizResult table - Two-part scoring: standardScore (ranking) + verificationStatus (fraud flags)
 model QuizResult {
   id          String    @id @default(cuid())
   quizId      String    @unique // One result per quiz

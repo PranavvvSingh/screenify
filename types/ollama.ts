@@ -28,7 +28,6 @@ export interface ProjectDetail {
   description: string;
   technologies: string[];
   role?: string;
-  duration?: string;
 }
 
 // Question Types
@@ -39,9 +38,7 @@ export interface Question {
   type: QuestionType;
   question: string;
   options: string[];
-  correct_answer: string;
-  correct_index: number;
-  resumeClaim?: string; // Only for RESUME_VERIFICATION type
+  correct_answer: number; // Index of the correct option (0, 1, 2, or 3)
 }
 
 // Quiz Generation Types

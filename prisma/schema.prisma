@@ -127,7 +127,7 @@ model Quiz {
   candidateName  String // Candidate's name (from resume upload)
   candidateEmail String // Candidate's email (from resume upload)
   token          String   @unique @default(cuid()) // Unique link for candidate access (no auth)
-  questions      Json // JSONB: [{ id, type: 'STANDARD' | 'RESUME_VERIFICATION', question, options: [], correctAnswer, skill, resumeClaim? }]
+  questions      Json // JSONB: [{ id, type: 'STANDARD' | 'RESUME_VERIFICATION', question, options: [], correctAnswer, skill }]
   duration       Int      @default(20) // Duration in minutes
   completed      Boolean  @default(false)
   createdAt      DateTime @default(now())

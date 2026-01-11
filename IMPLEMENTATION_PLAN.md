@@ -24,7 +24,7 @@ AI-powered candidate screening platform with **two-part assessment** (70% standa
 
 #### ✅ ~~Task 1: Initialize Next.js 16 Project~~
 
-**Status**: Pending
+**Status**: ✅ Done
 
 **Actions**:
 
@@ -57,7 +57,7 @@ AI-powered candidate screening platform with **two-part assessment** (70% standa
 
 #### ✅ ~~Task 2: Set Up shadcn/ui~~
 
-**Status**: Pending
+**Status**: ✅ Done
 
 **Actions**:
 
@@ -103,7 +103,7 @@ AI-powered candidate screening platform with **two-part assessment** (70% standa
 
 #### ✅ ~~Task 3: PostgreSQL Database Schema Setup~~
 
-**Status**: Pending
+**Status**: ✅ Done
 
 **Actions**:
 
@@ -139,7 +139,7 @@ AI-powered candidate screening platform with **two-part assessment** (70% standa
 
 #### ✅ ~~Task 4: Configure Prisma ORM~~
 
-**Status**: Pending
+**Status**: ✅ Done
 
 **Actions**:
 
@@ -192,7 +192,7 @@ enum UserRole {
 
 #### ✅ ~~Task 5: Implement Better Auth with OAuth (Recruiters Only)~~
 
-**Status**: Pending
+**Status**: ✅ Done
 
 **Actions**:
 
@@ -271,7 +271,7 @@ export const auth = betterAuth({
 
 #### ✅ ~~Task 6: Create Environment Variables Structure~~
 
-**Status**: Pending
+**Status**: ✅ Done
 
 **Actions**:
 
@@ -318,7 +318,7 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 #### ✅ ~~Task 7: Build App Router Structure~~
 
-**Status**: Pending
+**Status**: ✅ Done
 
 **Actions**:
 
@@ -388,7 +388,7 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 #### ~~✅ Task 8: Client-Side PDF.js Integration~~
 
-**Status**: Pending
+**Status**: ✅ Done
 
 **Actions**:
 
@@ -432,32 +432,34 @@ export async function extractTextFromPDF(file: File): Promise<string> {
 
 ---
 
-#### ✅ Task 9: Ollama Cloud API Integration Service
+#### ✅ ~~Task 9: Ollama Cloud API Integration Service~~
 
-**Status**: Pending
+**Status**: ✅ Done
 
 **Actions**:
 
-- [ ] Create `lib/ollama.ts` service file
-- [ ] Implement API call function with fetch
-- [ ] Add request/response TypeScript types
-- [ ] Implement retry logic (3 attempts with exponential backoff)
-- [ ] Add timeout handling (30s timeout)
-- [ ] Create specific functions:
-  - `extractJDRequirements(text: string)`
-  - `extractResumeProfile(text: string)`
-  - `generateQuiz(requirements: object, profile: object)`
-- [ ] Add error handling and logging
-- [ ] Validate JSON responses
+- [x] Create `lib/ollama.ts` service file
+- [x] Implement API call function with Ollama npm package
+- [x] Add request/response TypeScript types
+- [x] Implement retry logic (exponential backoff)
+- [x] Add timeout handling (30s timeout)
+- [x] Create specific functions:
+  - `extractJDRequirements(text: string)` - Extracts JD requirements with snake_case JSON schema
+  - `extractResumeProfile(text: string)` - Extracts resume profile with focus on projects
+  - `generateStandardQuestions(requirements, count)` - Generates role-based questions
+  - `generateVerificationQuestions(profile, count)` - Generates indirect resume verification questions
+  - `generateQuiz(standardQuestions, verificationQuestions)` - Pure function to combine and shuffle
+- [x] Add error handling and logging
+- [x] Validate JSON responses with parseJSONResponse utility
 
 **Verification Checklist**:
 
-- [ ] Test API call with sample text succeeds
-- [ ] Returns structured JSON as expected
-- [ ] Retry logic works on failure
-- [ ] Timeout handled gracefully
-- [ ] Environment variable `OLLAMA_CLOUD_API_KEY` used
-- [ ] Error messages are descriptive
+- [x] Test API call with sample text succeeds
+- [x] Returns structured JSON as expected
+- [x] Retry logic works on failure
+- [x] Timeout handled gracefully
+- [x] Environment variable `OLLAMA_CLOUD_API_KEY` used
+- [x] Error messages are descriptive
 
 **Files Created**:
 
@@ -671,13 +673,11 @@ export async function extractJDRequirements(rawText: string) {
     correctAnswer: string
     skill: string
     difficulty?: 'Easy' | 'Medium' | 'Hard'
-    resumeClaim?: string // Only for RESUME_VERIFICATION type
   }
   ```
 - [ ] Ensure all questions stored with type field
 - [ ] Standard questions (70%): type = 'STANDARD'
 - [ ] Verification questions (30%): type = 'RESUME_VERIFICATION'
-- [ ] Include `resumeClaim` for verification questions (e.g., "Claimed Kafka experience in Project X")
 - [ ] Questions fully shuffled before storage (candidate sees no distinction)
 
 **Verification Checklist**:
@@ -685,7 +685,6 @@ export async function extractJDRequirements(rawText: string) {
 - [ ] Question type tracked in database
 - [ ] Standard questions marked correctly
 - [ ] Verification questions marked correctly
-- [ ] Resume claim stored for verification questions
 - [ ] Questions shuffled before storage
 - [ ] Type information available for evaluation (but not shown to candidate)
 
@@ -738,7 +737,6 @@ export async function extractJDRequirements(rawText: string) {
   - Test depth, not breadth
   - Example: "You mentioned Kafka in Project X. Explain consumer groups."
 - [ ] Mark all questions as type: 'RESUME_VERIFICATION'
-- [ ] Include `resumeClaim` field for each question
 - [ ] Combine with base questions + shuffle
 - [ ] Store complete quiz in `quizzes` table
 
@@ -748,7 +746,6 @@ export async function extractJDRequirements(rawText: string) {
 - [ ] Correct count (30% of total)
 - [ ] All marked as RESUME_VERIFICATION type
 - [ ] Questions focus on projects from resume
-- [ ] Resume claim captured for each question
 - [ ] Combined with base questions and shuffled
 - [ ] Stored in quizzes table
 
@@ -997,9 +994,8 @@ if (verificationRate >= 0.8) verificationStatus = 'VERIFIED';
 else if (verificationRate >= 0.5) verificationStatus = 'QUESTIONABLE';
 else verificationStatus = 'DISCREPANCY';
 
-// Store verification results with claims
+// Store verification results
 const verificationResults = verificationQuestions.map((q, i) => ({
-  claim: q.resumeClaim,
   question: q.question,
   correct: verificationResponses[i].selected_index === q.correct_index
 }));
@@ -1634,7 +1630,7 @@ After completing each phase, verify:
 
 ### ✅ **Database Schema Changes Required**
 - JobRole needs: `baseQuestions`, `totalQuestions` fields
-- Quiz question structure needs: `type`, `resumeClaim` fields
+- Quiz question structure needs: `type` field
 - Evaluation needs: `standardScore`, `verificationStatus`, `verificationResults` fields
 - Candidate auth-related fields may be simplified (no User relation needed)
 

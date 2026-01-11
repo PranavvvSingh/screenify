@@ -99,7 +99,7 @@ async function testGenerateStandardQuestions(requirements: JDRequirements) {
   try {
     const questions = await generateStandardQuestions(requirements, 7);
     console.log(`✅ Generated ${questions.length} standard questions:`);
-    console.log(JSON.stringify(questions, null, 2));
+    // console.log(JSON.stringify(questions, null, 2));
     return questions;
   } catch (error) {
     console.error('❌ Failed to generate standard questions:', error);
@@ -112,7 +112,7 @@ async function testGenerateVerificationQuestions(profile: ResumeProfile) {
   try {
     const questions = await generateVerificationQuestions(profile, 3);
     console.log(`✅ Generated ${questions.length} verification questions:`);
-    console.log(JSON.stringify(questions, null, 2));
+    // console.log(JSON.stringify(questions, null, 2));
     return questions;
   } catch (error) {
     console.error('❌ Failed to generate verification questions:', error);

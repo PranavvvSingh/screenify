@@ -5,30 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PDFUpload } from "@/components/pdf-upload";
 import { SkillsInput } from "@/components/skills-input";
 import Link from "next/link";
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-const EXPERIENCE_LEVELS = [
-	{ value: "", label: "Select level..." },
-	{ value: "Entry", label: "Entry (0-1 years)" },
-	{ value: "Junior", label: "Junior (1-3 years)" },
-	{ value: "Mid", label: "Mid (3-5 years)" },
-	{ value: "Senior", label: "Senior (5-8 years)" },
-	{ value: "Lead", label: "Lead (8-12 years)" },
-	{ value: "Principal", label: "Principal (12+ years)" }
-];
-
 export default function NewRolePage() {
+	const router = useRouter();
+
 	// Form state
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
+	const [requirements, setRequirements] = useState<string[]>([]);
 	const [skills, setSkills] = useState<string[]>([]);
-	const [experienceYears, setExperienceYears] = useState<number | "">("");
-	const [experienceLevel, setExperienceLevel] = useState("");
+	const [preferredSkills, setPreferredSkills] = useState<string[]>([]);
+	const [minExperience, setMinExperience] = useState<number | "">("");
+	const [maxExperience, setMaxExperience] = useState<number | "">("");
 	const [totalQuestions, setTotalQuestions] = useState<number>(10);
 
 	// PDF section state
@@ -36,18 +30,22 @@ export default function NewRolePage() {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [isExtracting, setIsExtracting] = useState(false);
 
+	// Form submission state
+	const [isCreating, setIsCreating] = useState(false);
+
 	// Validation
 	const isFormValid = useMemo(() => {
 		return (
 			title.trim() !== "" &&
 			description.trim() !== "" &&
 			skills.length > 0 &&
-			experienceYears !== "" &&
-			experienceYears >= 0 &&
-			experienceYears <= 50 &&
-			experienceLevel !== ""
+			minExperience !== "" &&
+			maxExperience !== "" &&
+			minExperience >= 0 &&
+			maxExperience >= 0 &&
+			minExperience <= maxExperience
 		);
-	}, [title, description, skills, experienceYears, experienceLevel]);
+	}, [title, description, skills, minExperience, maxExperience]);
 
 	const handleFileSelected = (file: File) => {
 		setSelectedFile(file);
@@ -62,6 +60,7 @@ export default function NewRolePage() {
 		setIsExtracting(true);
 
 		try {
+			// Step 1: Extract text from PDF
 			const { extractTextFromPDF } = await import("@/lib/pdf-extractor");
 			const result = await extractTextFromPDF(selectedFile);
 
@@ -70,12 +69,37 @@ export default function NewRolePage() {
 				return;
 			}
 
-			alert(
-				`PDF extracted successfully!\n\nExtracted ${result.text.length} characters from ${result.numPages} page(s).\n\nOllama API integration coming soon to auto-populate the form fields.`
-			);
 
-			// TODO: Call Ollama API to parse text and populate form fields
-			console.log("Extracted text:", result.text);
+			// Step 2: Call Ollama API to extract structured requirements
+			const response = await fetch("/api/role/extract-jd", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ text: result.text })
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.error || "Failed to extract requirements from JD");
+			}
+
+			const { requirements } = await response.json();
+
+			// Step 3: Auto-populate form fields with extracted data
+			setTitle(requirements.job_title ?? "");
+			setDescription(requirements.description ?? "");
+			setRequirements(requirements.requirements ?? []);
+			setSkills(requirements.required_skills ?? []);
+			setPreferredSkills(requirements.preferred_skills ?? []);
+
+			// Set experience from requirements
+			if (requirements.experience?.min_years !== undefined && requirements.experience.min_years !== null) {
+				setMinExperience(requirements.experience.min_years);
+			}
+			if (requirements.experience?.max_years !== undefined && requirements.experience.max_years !== null) {
+				setMaxExperience(requirements.experience.max_years);
+			}
+
+			console.log("Extracted requirements:", requirements);
 		} catch (error) {
 			console.error("Error processing PDF:", error);
 			alert(`Failed to process PDF: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -84,7 +108,7 @@ export default function NewRolePage() {
 		}
 	};
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
 		if (!isFormValid) {
@@ -92,27 +116,59 @@ export default function NewRolePage() {
 			return;
 		}
 
-		const formData = {
-			title,
-			totalQuestions,
-			jd: {
-				rawText: "", // Will be populated from PDF extraction in future
-				description,
-				requirements: {
-					skills,
-					experience: {
-						min: experienceYears,
-						max: experienceYears,
-						level: experienceLevel
-					},
-					qualifications: [],
-					responsibilities: []
-				}
-			}
-		};
+		setIsCreating(true);
 
-		console.log("Form data:", formData);
-		alert("Form is valid! \n\nCheck console for form data.\n\nAPI integration coming next.");
+		try {
+			const roleData = {
+				title,
+				description,
+				totalQuestions,
+				requirements: {
+					job_title: title,
+					description: description,
+					requirements: requirements,
+					required_skills: skills,
+					preferred_skills: preferredSkills,
+					experience: {
+						min_years: Number(minExperience),
+						max_years: Number(maxExperience),
+					}
+				}
+			};
+
+			// Call API to create role
+			const response = await fetch("/api/role/create", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(roleData)
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.error || "Failed to create role");
+			}
+
+			const { role } = await response.json();
+
+			console.log("Role created successfully");
+
+			// Show success message
+			alert(
+				`Role created successfully!\n\n` +
+				`Title: ${role.title}\n` +
+				`Total Questions: ${role.totalQuestions}\n` +
+				`Base Questions Generated: ${role.baseQuestionsCount}\n\n` +
+				`Redirecting to role overview...`
+			);
+
+			// Redirect to role overview page
+			router.push(`/recruiter/roles/${role.id}`);
+		} catch (error) {
+			console.error("Error creating role:", error);
+			alert(`Failed to create role: ${error instanceof Error ? error.message : "Unknown error"}`);
+		} finally {
+			setIsCreating(false);
+		}
 	};
 
 	return (
@@ -176,14 +232,46 @@ export default function NewRolePage() {
 							<Input
 								id='title'
 								placeholder='e.g., Senior Full Stack Developer'
-								value={title}
+								value={title ?? ""}
 								onChange={(e) => setTitle(e.target.value)}
 								required
 								className='h-10'
 							/>
 						</div>
 
-						{/* Skills */}
+						{/* Job Description */}
+						<div className='space-y-2'>
+							<Label htmlFor='description' className='text-lg font-semibold'>
+								Job Description <span className='text-red-500'>*</span>
+							</Label>
+							<Textarea
+								id='description'
+								placeholder='Describe the role, responsibilities, and qualifications...'
+								rows={6}
+								value={description ?? ""}
+								onChange={(e) => setDescription(e.target.value)}
+								required
+							/>
+						</div>
+
+						{/* Requirements/Responsibilities */}
+						<div className='space-y-2'>
+							<Label htmlFor='requirements' className='text-lg font-semibold'>
+								Key Requirements/Responsibilities
+							</Label>
+							<p className='text-sm text-muted-foreground'>
+								Enter each requirement on a new line
+							</p>
+							<Textarea
+								id='requirements'
+								placeholder='e.g., Lead development of user-facing features&#10;Collaborate with cross-functional teams&#10;Mentor junior developers'
+								rows={5}
+								value={requirements.join('\n')}
+								onChange={(e) => setRequirements(e.target.value.split('\n').filter(r => r.trim()))}
+							/>
+						</div>
+
+						{/* Required Skills */}
 						<div className='space-y-2'>
 							<Label className='text-lg font-semibold'>
 								Required Skills <span className='text-red-500'>*</span>
@@ -191,46 +279,64 @@ export default function NewRolePage() {
 							<SkillsInput value={skills} onChange={setSkills} />
 						</div>
 
+						{/* Preferred Skills */}
+						<div className='space-y-2'>
+							<Label className='text-lg font-semibold'>
+								Preferred Skills
+							</Label>
+							<p className='text-sm text-muted-foreground'>
+								Nice-to-have skills that would be a plus
+							</p>
+							<SkillsInput value={preferredSkills} onChange={setPreferredSkills} />
+						</div>
+
 						{/* Experience */}
 						<div className='space-y-2'>
 							<Label className='text-lg font-semibold'>
 								Experience Required <span className='text-red-500'>*</span>
 							</Label>
+							<p className='text-sm text-muted-foreground'>
+								Specify the experience range in years (e.g., 3-5 years)
+							</p>
 							<div className='grid grid-cols-2 gap-4'>
 								<div>
-									<Label htmlFor='experience-years' className='text-sm text-muted-foreground'>
-										Years
+									<Label htmlFor='min-experience' className='text-sm text-muted-foreground'>
+										Min Years
 									</Label>
 									<Input
-										id='experience-years'
+										id='min-experience'
 										type='number'
 										min='0'
 										max='50'
-										placeholder='5'
-										value={experienceYears}
-										onChange={(e) => setExperienceYears(e.target.value === "" ? "" : Number(e.target.value))}
+										placeholder='3'
+										value={minExperience ?? ""}
+										onChange={(e) => setMinExperience(e.target.value === "" ? "" : Number(e.target.value))}
 										required
 										className='h-10'
 									/>
 								</div>
 								<div>
-									<Label htmlFor='experience-level' className='text-sm text-muted-foreground'>
-										Level
+									<Label htmlFor='max-experience' className='text-sm text-muted-foreground'>
+										Max Years
 									</Label>
-									<Select value={experienceLevel} onValueChange={setExperienceLevel}>
-										<SelectTrigger className='w-full'>
-											<SelectValue placeholder='Select level...' />
-										</SelectTrigger>
-										<SelectContent>
-											{EXPERIENCE_LEVELS.filter((level) => level.value !== "").map((level) => (
-												<SelectItem key={level.value} value={level.value}>
-													{level.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+									<Input
+										id='max-experience'
+										type='number'
+										min='0'
+										max='50'
+										placeholder='5'
+										value={maxExperience ?? ""}
+										onChange={(e) => setMaxExperience(e.target.value === "" ? "" : Number(e.target.value))}
+										required
+										className='h-10'
+									/>
 								</div>
 							</div>
+							{minExperience !== "" && maxExperience !== "" && minExperience > maxExperience && (
+								<p className='text-sm text-destructive'>
+									⚠️ Maximum experience must be greater than or equal to minimum experience
+								</p>
+							)}
 						</div>
 
 						{/* Total Questions */}
@@ -255,28 +361,13 @@ export default function NewRolePage() {
 							</p>
 						</div>
 
-						{/* Job Description */}
-						<div className='space-y-2'>
-							<Label htmlFor='description' className='text-lg font-semibold'>
-								Job Description <span className='text-red-500'>*</span>
-							</Label>
-							<Textarea
-								id='description'
-								placeholder='Describe the role, responsibilities, and qualifications...'
-								rows={10}
-								value={description}
-								onChange={(e) => setDescription(e.target.value)}
-								required
-							/>
-						</div>
-
 						{/* Form Actions */}
 						<div className='flex gap-3'>
-							<Button type='submit' size='lg' className='flex-1 text-md' disabled={!isFormValid}>
-								Create Role
+							<Button type='submit' size='lg' className='flex-1 text-md' disabled={!isFormValid || isCreating}>
+								{isCreating ? "Creating Role..." : "Create Role"}
 							</Button>
 							<Link href='/recruiter'>
-								<Button type='button' variant='outline' size='lg'>
+								<Button type='button' variant='outline' size='lg' disabled={isCreating}>
 									Cancel
 								</Button>
 							</Link>

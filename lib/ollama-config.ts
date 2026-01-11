@@ -7,6 +7,11 @@ export const schemas = {
     type: 'object',
     properties: {
       job_title: { type: 'string' },
+      description: {type: 'string'},
+      requirements: {
+        type: 'array',
+        items: { type: 'string' }
+      },
       department: { type: 'string' },
       required_skills: {
         type: 'array',
@@ -23,17 +28,9 @@ export const schemas = {
           max_years: { type: 'number' }
         },
         required: ['min_years', 'max_years']
-      },
-      responsibilities: {
-        type: 'array',
-        items: { type: 'string' }
-      },
-      qualifications: {
-        type: 'array',
-        items: { type: 'string' }
       }
     },
-    required: ['job_title', 'required_skills', 'preferred_skills', 'experience', 'responsibilities', 'qualifications']
+    required: ['job_title', 'description', 'requirements', 'required_skills', 'preferred_skills', 'experience']
   },
 
   resumeProfile: {
@@ -135,12 +132,12 @@ ${rawText}
 
 Extract and return a JSON object with these fields:
 - job_title: string
+- description: string (comprehensive job description including responsibilities, qualifications, and any other relevant details)
+- requirements: array of strings (list of key requirements/qualifications for the role)
 - department: string (or empty string if not mentioned)
-- required_skills: array of strings
+- required_skills: array of strings (technical/hard skills required)
 - preferred_skills: array of strings (or empty array if none)
 - experience: object with min_years and max_years as numbers
-- responsibilities: array of strings
-- qualifications: array of strings
 
 IMPORTANT: Return ONLY the JSON object. No markdown, no explanation, no tables. Just pure JSON.`,
 
@@ -184,8 +181,8 @@ export const standardQuestionsConfig = {
 
 Context:
 - Role: ${requirements.job_title}
-- Skills: ${requirements.required_skills.join(", ")}
-- Responsibilities: ${requirements.responsibilities.join(", ")}
+- Required Skills: ${requirements.required_skills.join(", ")}
+- Job Description: ${requirements.description}
 
 Output:
 JSON array of ${count} objects, each with:

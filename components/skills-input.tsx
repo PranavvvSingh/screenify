@@ -12,7 +12,7 @@ interface SkillsInputProps {
 const DEFAULT_SUGGESTIONS = [
   // Frontend
   'React', 'Vue', 'Angular', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'Tailwind', 'Next.js', 'Redux',
-  'Svelte', 'Nuxt.js', 'React Native', 'Flutter', 'jQuery', 'Webpack', 'Vite', 'SASS', 'LESS', 'Bootstrap',
+  'Svelte', 'Nuxt.js', 'jQuery', 'Webpack', 'Vite', 'SASS', 'LESS', 'Bootstrap',
   'Material-UI', 'Ant Design', 'Chakra UI', 'Styled Components', 'Ember.js', 'Backbone.js',
   // Backend
   'Node.js', 'Python', 'Java', 'Go', 'Ruby', 'PHP', 'C#', '.NET', 'Express', 'Django',

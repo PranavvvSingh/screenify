@@ -101,7 +101,7 @@ model JobRole {
   id             String   @id @default(cuid())
   title          String
   description    String?  @db.Text
-  jd             Json // JSONB: { rawText: "", requirements: { skills: [], experience: {}, qualifications: [], responsibilities: [] } }
+  jd             Json // JSONB: JDRequirements - { job_title, description, requirements[], required_skills[], preferred_skills[], experience: { min_years, max_years } }
   baseQuestions  Json? // JSONB: Array of standard questions (70% of total) - reused for all candidates
   totalQuestions Int      @default(10) // Total questions (5-25), maintains 70/30 split
   recruiterId    String

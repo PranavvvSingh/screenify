@@ -123,8 +123,8 @@ export async function extractJDRequirements(rawText: string): Promise<JDRequirem
       },
     });
 
-    console.log('📥 Raw Ollama Response for JD Requirements:');
-    console.log(response.response);
+    // console.log('📥 Raw Ollama Response for JD Requirements:');
+    // console.log(response.response);
 
     return parseJSONResponse<JDRequirements>(response.response);
   });
@@ -178,8 +178,8 @@ export async function generateStandardQuestions(
       },
     });
 
-    console.log('📥 Raw Ollama Response for Standard Questions:');
-    console.log(response.response);
+    // console.log('📥 Raw Ollama Response for Standard Questions:');
+    // console.log(response.response);
 
     const questions = parseJSONResponse<Array<{
       question: string;

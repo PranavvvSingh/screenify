@@ -493,7 +493,7 @@ export async function extractJDRequirements(rawText: string) {
 
 #### ✅ Task 10: Role Creation + JD Upload + Base Question Generation
 
-**Status**: Pending
+**Status**: Done
 
 **Actions**:
 
@@ -538,7 +538,7 @@ export async function extractJDRequirements(rawText: string) {
 
 #### ✅ Task 11: Requirements Review and Edit UI
 
-**Status**: Pending
+**Status**: not required
 
 **Actions**:
 

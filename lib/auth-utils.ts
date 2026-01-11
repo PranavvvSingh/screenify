@@ -36,6 +36,29 @@ export async function requireRecruiter() {
 
 // Note: Candidate authentication removed - candidates access quizzes via unique token links (no user account)
 
+/**
+ * API Route version of requireRecruiter - throws error instead of redirecting
+ * Use this in API routes (route handlers) instead of requireRecruiter()
+ */
+export async function requireRecruiterAPI() {
+  const session = await getServerSession();
+
+  if (!session) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: { recruiter: true },
+  });
+
+  if (!user?.recruiter) {
+    throw new Error("FORBIDDEN");
+  }
+
+  return { session, recruiter: user.recruiter };
+}
+
 export async function getUserRole(userId: string): Promise<"recruiter" | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },

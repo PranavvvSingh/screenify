@@ -1,15 +1,14 @@
 // JD Requirements Types
 export interface JDRequirements {
-  required_skills: string[];
-  preferred_skills: string[];
-  experience: {
-    min_years: number;
-    max_years: number;
-  };
-  responsibilities: string[];
-  qualifications: string[];
-  job_title: string;
-  department?: string;
+	job_title: string;
+	description: string;
+	requirements: string[];
+	required_skills: string[];
+	preferred_skills: string[];
+	experience: {
+		min_years: number;
+		max_years: number;
+	};
 }
 
 // Resume Profile Types

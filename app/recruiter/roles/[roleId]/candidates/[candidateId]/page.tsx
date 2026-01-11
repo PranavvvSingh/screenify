@@ -4,20 +4,22 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 
-export default function CandidateDetailPage({
+export default async function CandidateDetailPage({
   params,
 }: {
-  params: { roleId: string; candidateId: string };
+  params: Promise<{ roleId: string; candidateId: string }>;
 }) {
+  const { roleId, candidateId } = await params;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href={`/recruiter/roles/${params.roleId}`}>
+        <Link href={`/recruiter/roles/${roleId}`}>
           <Button variant="outline">← Back to Role</Button>
         </Link>
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-foreground">Candidate Profile</h1>
-          <p className="text-muted-foreground mt-1">Candidate ID: {params.candidateId}</p>
+          <p className="text-muted-foreground mt-1">Candidate ID: {candidateId}</p>
         </div>
         <Button variant="outline">Shortlist</Button>
         <Button variant="destructive">Reject</Button>

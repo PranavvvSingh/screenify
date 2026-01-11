@@ -12,19 +12,17 @@ import type { JDRequirements } from '../types/ollama';
 // Sample requirements
 const sampleRequirements: JDRequirements = {
   job_title: "Senior Full Stack Developer",
-  department: "Engineering",
+  description: "We are looking for a Senior Full Stack Developer to join our Engineering team",
   required_skills: ["Node.js", "Express.js", "React", "Next.js", "PostgreSQL"],
   preferred_skills: ["Docker", "AWS"],
   experience: {
     min_years: 5,
     max_years: 8
   },
-  responsibilities: [
+  requirements: [
     "Develop and maintain web applications",
     "Design and implement database schemas",
-    "Write clean, maintainable code"
-  ],
-  qualifications: [
+    "Write clean, maintainable code",
     "Bachelor's degree in Computer Science",
     "5+ years of professional software development experience"
   ]

@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { AddCandidateModalWrapper } from "@/components/add-candidate-modal-wrapper";
 
 export default async function RoleDetailPage({ params }: { params: Promise<{ roleId: string }> }) {
   const { roleId } = await params;
@@ -77,7 +78,7 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
             )}
           </div>
         </div>
-        <Button size="lg" className="mt-2">Add Candidate</Button>
+        <AddCandidateModalWrapper roleId={roleId} />
       </div>
 
       {/* Stats Cards */}
@@ -121,12 +122,12 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
           <div className="flex items-center gap-3">
             <div className="h-10 w-1 bg-primary rounded-full" />
             <div>
-              <CardTitle className="text-xl">Role Requirements</CardTitle>
+              <CardTitle className="text-xl">Job Description</CardTitle>
               <CardDescription className="text-sm">Key qualifications and skills for this position</CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-1">
           <div className="space-y-6">
             {/* Description Section */}
             {role.description && (
@@ -224,7 +225,7 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Candidates</CardTitle>
-          <CardDescription>All candidates who applied for this role</CardDescription>
+          <CardDescription>All candidates invited for this role</CardDescription>
         </CardHeader>
         <CardContent>
           {totalCandidates === 0 ? (
@@ -236,10 +237,50 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
               <p className="text-lg font-medium">No candidates yet</p>
-              <p className="text-sm mt-2">Upload candidate resumes to get started</p>
+              <p className="text-sm mt-2">Click &quot;Add Candidate&quot; to get started</p>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Candidate list will appear here</p>
+            <div className="space-y-4">
+              {role.quizzes.map((quiz) => {
+                const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+                const quizUrl = `${appUrl}/quiz/${quiz.token}`;
+                const statusColor = quiz.completed ? "text-green-600" : "text-blue-600";
+                const statusText = quiz.completed ? "Completed" : "Pending";
+
+                return (
+                  <div
+                    key={quiz.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
+                  >
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-3">
+                        <h4 className="font-medium text-base">{quiz.candidateName}</h4>
+                        <Badge
+                          variant={quiz.completed ? "default" : "secondary"}
+                          className={statusColor}
+                        >
+                          {statusText}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{quiz.candidateEmail}</p>
+                      <div className="flex items-center gap-2 pt-1">
+                        <p className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded max-w-md truncate">
+                          {quizUrl}
+                        </p>
+                      </div>
+                    </div>
+                    {quiz.result && (
+                      <div className="ml-4 text-right">
+                        <p className="text-2xl font-bold text-primary">
+                          {quiz.result.standardScore?.toFixed(0)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">Score</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </CardContent>
       </Card>

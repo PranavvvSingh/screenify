@@ -14,7 +14,6 @@ import {
   verificationQuestionsConfig,
 } from './ollama-config';
 
-// Initialize Ollama client
 const getOllamaClient = () => {
   const apiKey = process.env.OLLAMA_CLOUD_API_KEY;
   const baseUrl = process.env.OLLAMA_CLOUD_API_URL || 'https://cloud.ollama.ai/api';
@@ -37,8 +36,8 @@ const MODEL = process.env.OLLAMA_CLOUD_MODEL || "gpt-oss:120b-cloud";
 // Utility: Retry logic with exponential backoff
 async function withRetry<T>(
   fn: () => Promise<T>,
-  maxAttempts: number = 1,
-  timeoutMs: number = 30000
+  maxAttempts: number = 2,
+  timeoutMs: number = 60000
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -65,41 +64,6 @@ async function withRetry<T>(
   );
 }
 
-// Utility: Parse JSON response safely
-// COMMENTED OUT FOR TESTING - to see raw LLM responses
-// function parseJSONResponse<T>(response: string): T {
-//   try {
-//     // First, try to parse as-is (in case it's already pure JSON)
-//     try {
-//       return JSON.parse(response) as T;
-//     } catch {
-//       // Not pure JSON, continue with extraction
-//     }
-
-//     // Extract JSON from markdown code blocks
-//     const jsonBlockMatch = response.match(/```json\s*\n([\s\S]*?)\n```/);
-//     if (jsonBlockMatch) {
-//       return JSON.parse(jsonBlockMatch[1]) as T;
-//     }
-
-//     // Try to find any JSON object in the response
-//     const jsonMatch = response.match(/\{[\s\S]*\}/);
-//     if (jsonMatch) {
-//       return JSON.parse(jsonMatch[0]) as T;
-//     }
-
-//     // Remove markdown code blocks and try again
-//     const cleaned = response
-//       .replace(/```json\n?/g, '')
-//       .replace(/```\n?/g, '')
-//       .trim();
-
-//     return JSON.parse(cleaned) as T;
-//   } catch (error) {
-//     throw new Error(`Invalid JSON response from Ollama API: ${error instanceof Error ? error.message : 'Unknown error'}`);
-//   }
-// }
-
 // Temporary direct parsing for testing
 function parseJSONResponse<T>(response: string): T {
   return JSON.parse(response) as T;
@@ -110,6 +74,7 @@ function parseJSONResponse<T>(response: string): T {
  */
 export async function extractJDRequirements(rawText: string): Promise<JDRequirements> {
   const ollama = getOllamaClient();
+  console.log("[Ollama] Extracting JD Requirements");
 
   return withRetry(async () => {
     const response = await ollama.generate({
@@ -123,9 +88,7 @@ export async function extractJDRequirements(rawText: string): Promise<JDRequirem
       },
     });
 
-    // console.log('📥 Raw Ollama Response for JD Requirements:');
-    // console.log(response.response);
-
+    console.log("[Ollama] JD Requirements extracted");
     return parseJSONResponse<JDRequirements>(response.response);
   });
 }
@@ -136,6 +99,7 @@ export async function extractJDRequirements(rawText: string): Promise<JDRequirem
  */
 export async function extractResumeProfile(rawText: string): Promise<ResumeProfile> {
   const ollama = getOllamaClient();
+  console.log("[Ollama] Extracting Resume Profile");
 
   return withRetry(async () => {
     const response = await ollama.generate({
@@ -149,9 +113,7 @@ export async function extractResumeProfile(rawText: string): Promise<ResumeProfi
       },
     });
 
-    console.log('📥 Raw Ollama Response for Resume Profile:');
-    console.log(response.response);
-
+    console.log("[Ollama] Resume Profile extracted");
     return parseJSONResponse<ResumeProfile>(response.response);
   });
 }
@@ -165,6 +127,7 @@ export async function generateStandardQuestions(
   count: number
 ): Promise<Question[]> {
   const ollama = getOllamaClient();
+  console.log("[Ollama] Generating Standard Questions");
 
   return withRetry(async () => {
     const response = await ollama.generate({
@@ -178,9 +141,7 @@ export async function generateStandardQuestions(
       },
     });
 
-    // console.log('📥 Raw Ollama Response for Standard Questions:');
-    // console.log(response.response);
-
+    console.log("[Ollama] Standard Questions generated");
     const questions = parseJSONResponse<Array<{
       question: string;
       options: string[];
@@ -207,6 +168,7 @@ export async function generateVerificationQuestions(
   count: number
 ): Promise<Question[]> {
   const ollama = getOllamaClient();
+  console.log("[Ollama] Generating Verification Questions");
 
   return withRetry(async () => {
     const response = await ollama.generate({
@@ -220,9 +182,7 @@ export async function generateVerificationQuestions(
       },
     });
 
-    console.log('📥 Raw Ollama Response for Verification Questions:');
-    console.log(response.response);
-
+    console.log("[Ollama] Verification Questions generated");
     const questions = parseJSONResponse<Array<{
       question: string;
       options: string[];

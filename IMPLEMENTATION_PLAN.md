@@ -23,46 +23,11 @@ The following have been implemented:
 
 - **Phase 1: Foundation** - Next.js 16, shadcn/ui, PostgreSQL schema, Prisma ORM, Better Auth with Google OAuth, environment variables, app router structure
 - **Phase 2: Document Processing** - PDF.js client-side extraction, Ollama Cloud API integration (JD extraction, resume extraction, question generation functions)
-- **Phase 3: Role Creation** - Role creation form with PDF import, inline requirements editing, base question generation (70%), role overview page
+- **Phase 3: Role Creation & Candidate Setup** - Role creation form with PDF import, inline requirements editing, base question generation (70%), role overview page, per-candidate quiz setup with resume upload and verification questions (30%)
 
 ---
 
 ## Remaining Tasks
-
-### **Phase 3: Per-Candidate Setup**
-
-#### Task 12: Per-Candidate Quiz Setup (Resume Upload + Verification Questions)
-
-**Status**: Pending
-
-**Actions**:
-
-- [ ] Create `app/recruiter/roles/[id]/add-candidate/page.tsx`
-- [ ] Build form with:
-  - Candidate name (required)
-  - Candidate email (required)
-  - Resume PDF upload (required)
-- [ ] Extract text from uploaded resume PDF
-- [ ] Send extracted text to Ollama Cloud API for profile extraction
-- [ ] Focus on **projects and tech mentioned in projects**
-- [ ] Generate **verification questions (30% of total)** from resume projects
-- [ ] Combine base questions (70%) + verification questions (30%)
-- [ ] Shuffle all questions fully (no visual distinction)
-- [ ] Create API route `app/api/role/[id]/add-candidate/route.ts`
-- [ ] Generate unique quiz token (UUID)
-- [ ] Store in database:
-  - Quiz with candidate info (name, email)
-  - Complete questions (base + verification, shuffled)
-  - Unique quiz token
-- [ ] Return quiz URL: `{APP_URL}/quiz/{token}`
-- [ ] Add copy-to-clipboard button
-- [ ] Show list of candidates for this role with their quiz links
-
-**Files**:
-- `app/recruiter/roles/[id]/add-candidate/page.tsx`
-- `app/api/role/[id]/add-candidate/route.ts`
-
----
 
 ### **Phase 4: Candidate Flow**
 

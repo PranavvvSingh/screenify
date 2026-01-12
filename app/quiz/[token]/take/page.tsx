@@ -78,55 +78,77 @@ export default function QuizTakePage() {
       description: "Your quiz has been automatically submitted.",
     });
     setStopTimer(true);
-
-    // Auto-submit with current answers (handled by parent component)
-    // For now, we'll redirect to a timeout page or show a message
-    // This will be enhanced when we implement the submission API
-    setTimeout(() => {
-      router.push(`/quiz/${token}`);
-    }, 3000);
-  };
-
-  const handleSubmit = async (
-    answers: Record<string, { answer: number; timeTaken: number }>
-  ) => {
     setSubmitting(true);
 
     try {
-      // TODO: Implement submission API endpoint (Task 20)
-      // For now, just log the answers
-      console.log("Submitting answers:", answers);
+      // Submit quiz with timeout flag
+      const response = await fetch(`/api/quiz/${token}/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          timedOut: true, // Flag to indicate submission due to timeout
+        }),
+      });
 
-      // Prepare submission data
-      const submissionData = {
-        quizId: quizSession?.quizId,
-        resultId: quizSession?.resultId,
-        answers: Object.entries(answers).map(([questionId, data]) => ({
-          questionId,
-          answer: data.answer,
-          timeTaken: data.timeTaken,
-        })),
-        // Proctoring flags will be added in Task 18
-        proctoringFlags: {},
-      };
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Failed to submit quiz:", data.error);
+        toast.error("Failed to submit quiz", {
+          description: "Please contact support.",
+        });
+        return;
+      }
 
-      console.log("Submission data:", submissionData);
+      // Redirect to completed page with timeout flag
+      router.push(`/quiz/${token}/completed?timedOut=true`);
+    } catch (error) {
+      console.error("Error during auto-submit:", error);
+      toast.error("Failed to submit quiz", {
+        description: "Please contact support.",
+      });
+    }
+  };
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setStopTimer(true); // Stop the timer during submission
+
+    try {
+      // Note: Individual answers are already saved via the answer API
+      // This just marks the quiz as complete and triggers evaluation
+      const response = await fetch(`/api/quiz/${token}/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          timedOut: false, // Manual submission
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to submit quiz");
+      }
 
       // Show success message
       toast.success("Assessment submitted successfully!", {
         description: "Thank you for completing the assessment.",
       });
 
-      // Redirect to completion page after a short delay
+      // Redirect to completion page
       setTimeout(() => {
-        router.push(`/quiz/${token}`);
-      }, 2000);
+        router.push(`/quiz/${token}/completed`);
+      }, 1500);
     } catch (err) {
       console.error("Error submitting quiz:", err);
       toast.error("Failed to submit assessment", {
-        description: "Please try again.",
+        description: err instanceof Error ? err.message : "Please try again.",
       });
       setSubmitting(false);
+      setStopTimer(false); // Resume timer if submission failed
     }
   };
 
@@ -209,6 +231,7 @@ export default function QuizTakePage() {
           ) : (
             <QuizInterface
               questions={quizSession.questions}
+              quizToken={token}
               onSubmit={handleSubmit}
             />
           )}

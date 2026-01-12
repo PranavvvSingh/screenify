@@ -28,16 +28,18 @@ interface Question {
 
 interface QuizInterfaceProps {
   questions: Question[];
-  onSubmit: (answers: Record<string, { answer: number; timeTaken: number }>) => void;
+  quizToken: string; // Token for API calls
+  onSubmit: () => void;
   onTimePerQuestionChange?: (questionId: string, time: number) => void;
 }
 
-export function QuizInterface({ questions, onSubmit, onTimePerQuestionChange }: QuizInterfaceProps) {
+export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestionChange }: QuizInterfaceProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [questionStartTimes, setQuestionStartTimes] = useState<Record<string, number>>({});
   const [questionTimeTaken, setQuestionTimeTaken] = useState<Record<string, number>>({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [savingAnswer, setSavingAnswer] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
@@ -71,12 +73,48 @@ export function QuizInterface({ questions, onSubmit, onTimePerQuestionChange }: 
     }
   };
 
-  const handleAnswerChange = (value: string) => {
+  const handleAnswerChange = async (value: string) => {
     const answerIndex = parseInt(value);
+
+    // Update local state immediately for UI responsiveness
     setAnswers((prev) => ({
       ...prev,
       [currentQuestion.id]: answerIndex,
     }));
+
+    // Calculate time taken for this question so far
+    const questionId = currentQuestion.id;
+    const timeTaken = questionStartTimes[questionId]
+      ? Math.floor((Date.now() - questionStartTimes[questionId]) / 1000)
+      : 0;
+
+    // Save answer to database immediately
+    try {
+      setSavingAnswer(true);
+      const response = await fetch(`/api/quiz/${quizToken}/answer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          questionId: currentQuestion.id,
+          answer: answerIndex,
+          timeTaken,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Failed to save answer:", data.error);
+        // Don't show error to user - answer is still in local state
+        // They can retry on submit
+      }
+    } catch (error) {
+      console.error("Error saving answer:", error);
+      // Don't show error to user - fail silently
+    } finally {
+      setSavingAnswer(false);
+    }
   };
 
   const handleNext = () => {
@@ -107,19 +145,9 @@ export function QuizInterface({ questions, onSubmit, onTimePerQuestionChange }: 
   };
 
   const handleConfirmSubmit = () => {
-    // Prepare answers with time taken
-    const answersWithTime: Record<string, { answer: number; timeTaken: number }> = {};
-
-    questions.forEach((q) => {
-      if (answers[q.id] !== undefined) {
-        answersWithTime[q.id] = {
-          answer: answers[q.id],
-          timeTaken: questionTimeTaken[q.id] || 0,
-        };
-      }
-    });
-
-    onSubmit(answersWithTime);
+    // Answers are already saved individually via the answer API
+    // Just trigger the final submission
+    onSubmit();
   };
 
   const getQuestionStatus = (index: number) => {

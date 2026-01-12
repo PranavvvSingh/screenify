@@ -1,7 +1,7 @@
 "use client";
 
 import { formatTime } from "@/lib/utils/format-time";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { RxLapTimer as TimerIcon } from "react-icons/rx";
 import { cn } from "@/lib/utils";
 
@@ -40,18 +40,22 @@ const Timer = ({
     return () => clearInterval(intervalId);
   }, [stopTimer, onTimeUp]);
 
-  // Calculate color based on time remaining
+  // Calculate color based on fixed time thresholds
   const getTimeColor = () => {
-    const percentRemaining = (time / initialTime) * 100;
-    if (percentRemaining > 50) return "text-primary";
-    if (percentRemaining > 25) return "text-yellow-500";
-    return "text-destructive";
+    const minutes = Math.floor(time / 60);
+    if (time < 60) return "text-destructive"; // < 1 minute: red (critical)
+    if (minutes < 5) return "text-yellow-500"; // < 5 minutes: yellow (warning)
+    return "text-primary"; // >= 5 minutes: primary color
   };
+
+  // Check if time is critical (< 1 minute) for pulse animation
+  const isCritical = time < 60;
 
   return (
     <div
       className={cn(
         "flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2",
+        isCritical && "animate-pulse", // Pulse animation when < 1 minute
         className
       )}
     >

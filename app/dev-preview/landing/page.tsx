@@ -2,19 +2,40 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SignInButtons } from "@/components/auth/sign-in-buttons";
-import {
-  Brain,
-  Zap,
-  Target,
-  ArrowRight,
-  Shield,
+import { authClient } from "@/lib/auth-client";
+import { FcGoogle } from "react-icons/fc";
+import { 
+  Brain, 
+  Zap, 
+  Target, 
+  ArrowRight, 
+  Shield, 
   BarChart3,
   Clock,
   CheckCircle2
 } from "lucide-react";
 
-export default function Home() {
+function SignInButton() {
+  const handleGoogleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/api/auth-callback",
+    });
+  };
+
+  return (
+    <Button
+      onClick={handleGoogleSignIn}
+      size="lg"
+      className="h-12 px-8 text-base font-medium bg-card text-foreground border border-border shadow-soft-md hover:shadow-soft-lg hover:border-primary/20 transition-all cursor-pointer"
+    >
+      <FcGoogle className="h-5 w-5 mr-3" />
+      Continue with Google
+    </Button>
+  );
+}
+
+export default function LandingPreview() {
   const features = [
     {
       icon: Brain,
@@ -56,10 +77,10 @@ export default function Home() {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="font-pacifico text-2xl text-gradient-primary">
+          <Link href="/dev-preview" className="font-pacifico text-2xl text-gradient-primary">
             Screenify
           </Link>
-          <SignInButtons />
+          <SignInButton />
         </div>
       </nav>
 
@@ -67,7 +88,7 @@ export default function Home() {
       <section className="relative overflow-hidden">
         {/* Subtle background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-accent/[0.02]" />
-
+        
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-24">
           <div className="max-w-3xl mx-auto text-center space-y-8">
             {/* Badge */}
@@ -88,13 +109,26 @@ export default function Home() {
 
             {/* Subheadline */}
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Transform your hiring process with AI-generated assessments that save time,
+              Transform your hiring process with AI-generated assessments that save time, 
               reduce bias, and identify top talent with precision.
             </p>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <SignInButtons />
+              <Button 
+                size="lg" 
+                className="h-12 px-8 text-base font-medium shadow-soft-md hover:shadow-soft-lg transition-shadow"
+              >
+                Get Started Free
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="h-12 px-8 text-base font-medium"
+              >
+                Watch Demo
+              </Button>
             </div>
 
             {/* Social proof */}
@@ -213,7 +247,7 @@ export default function Home() {
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join hundreds of recruiters who have streamlined their screening process with Screenify.
           </p>
-          <SignInButtons />
+          <SignInButton />
         </div>
       </section>
 
@@ -221,9 +255,12 @@ export default function Home() {
       <footer className="py-8 border-t border-border">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <span className="font-pacifico text-xl text-primary">Screenify</span>
-          <span className="text-sm text-muted-foreground">
-            AI-Powered Candidate Screening
-          </span>
+          <Link
+            href="/dev-preview"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            &larr; Back to previews
+          </Link>
         </div>
       </footer>
     </div>

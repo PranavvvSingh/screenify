@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +5,7 @@ import { notFound } from "next/navigation";
 import { AddCandidateModalWrapper } from "@/components/add-candidate-modal-wrapper";
 import { CandidateList } from "@/components/candidate-list";
 import { JobDescriptionCollapsible } from "@/components/job-description-collapsible";
+import { Users, CheckCircle, BarChart3, ArrowLeft } from "lucide-react";
 
 export default async function RoleDetailPage({ params }: { params: Promise<{ roleId: string }> }) {
   const { roleId } = await params;
@@ -55,25 +55,19 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
     : "Not specified";
 
   return (
-    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 py-6">
+    <div className="space-y-8">
       {/* Header Section */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center gap-3">
-            <Link href="/recruiter">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m12 19-7-7 7-7"/>
-                  <path d="M19 12H5"/>
-                </svg>
-                Back
-              </Button>
-            </Link>
-          </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/recruiter">
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-muted">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-foreground">{role.title}</h1>
+            <h1 className="text-3xl font-bold text-foreground">{role.title}</h1>
             {jdData.job_title && jdData.job_title !== role.title && (
-              <p className="text-lg text-muted-foreground mt-1">{jdData.job_title}</p>
+              <p className="text-muted-foreground mt-1">{jdData.job_title}</p>
             )}
           </div>
         </div>
@@ -81,38 +75,44 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-l-4 border-l-primary">
-          <CardHeader className="pb-1">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Candidates</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-3">
-            <p className="text-3xl font-bold text-primary">{totalCandidates}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">candidates applied</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Candidates</p>
+              <p className="text-3xl font-bold text-foreground">{totalCandidates}</p>
+            </div>
+          </div>
+        </div>
 
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="pb-1">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed Assessments</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-3">
-            <p className="text-3xl font-bold text-blue-500">{completedAssessments}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">assessments completed</p>
-          </CardContent>
-        </Card>
+        <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 text-accent" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Completed Assessments</p>
+              <p className="text-3xl font-bold text-foreground">{completedAssessments}</p>
+            </div>
+          </div>
+        </div>
 
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="pb-1">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Average Score</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-3">
-            <p className="text-3xl font-bold text-green-500">
-              {avgScore !== null ? `${avgScore.toFixed(0)}%` : '-'}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">across all assessments</p>
-          </CardContent>
-        </Card>
+        <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center">
+              <BarChart3 className="h-6 w-6 text-success" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Average Score</p>
+              <p className="text-3xl font-bold text-foreground">
+                {avgScore !== null ? `${avgScore.toFixed(0)}%` : "-"}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Role Requirements Section */}
@@ -125,11 +125,10 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
       />
 
       {/* Candidates Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Candidates</h2>
-          </div>
+      <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-foreground">Candidates</h2>
+          <p className="text-sm text-muted-foreground mt-1">All candidates for this role</p>
         </div>
         <CandidateList quizzes={role.quizzes} roleId={roleId} />
       </div>

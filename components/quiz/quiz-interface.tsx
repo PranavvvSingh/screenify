@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -16,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 
 interface Question {
   id: string;
@@ -46,6 +46,7 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
   const totalQuestions = questions.length;
   const answeredCount = Object.keys(answers).length;
   const allAnswered = answeredCount === totalQuestions;
+  const progressPercent = Math.round((answeredCount / totalQuestions) * 100);
 
   // Track time when entering a new question
   useEffect(() => {
@@ -170,17 +171,6 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
     return "unanswered";
   };
 
-  const getQuestionButtonClass = (status: string) => {
-    switch (status) {
-      case "current":
-        return "border-2 border-primary bg-primary text-primary-foreground";
-      case "answered":
-        return "border-2 border-green-500 bg-green-500 text-white";
-      default:
-        return "border border-border hover:bg-accent";
-    }
-  };
-
   if (!currentQuestion) {
     return null;
   }
@@ -190,129 +180,145 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
       <div className="grid gap-6 lg:grid-cols-4">
         {/* Main Question Area */}
         <div className="lg:col-span-3 space-y-6">
-          <Card>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">
-                  {currentQuestion.question}
-                </h3>
-                <RadioGroup
-                  value={answers[currentQuestion.id] !== undefined ? answers[currentQuestion.id].toString() : undefined}
-                  onValueChange={handleAnswerChange}
-                >
-                  {currentQuestion.options.map((option, index) => (
-                    <div
-                      key={index}
-                      onClick={() => handleAnswerChange(index.toString())}
-                      className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent cursor-pointer"
-                    >
-                      <RadioGroupItem value={index.toString()} id={`option-${index}`} className="mt-0.5" />
-                      <Label
-                        htmlFor={`option-${index}`}
-                        className="flex-1 cursor-pointer leading-relaxed"
-                      >
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
+          <div className="p-8 rounded-2xl bg-card shadow-soft-md">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+              <span>Question {currentQuestionIndex + 1} of {totalQuestions}</span>
+            </div>
 
-              <div className="flex justify-between">
-                <Button
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={currentQuestionIndex === 0}
-                >
-                  Previous
-                </Button>
-                {currentQuestionIndex < totalQuestions - 1 ? (
-                  <Button onClick={handleNext}>Next Question</Button>
-                ) : (
-                  <Button
-                    onClick={handleSubmitClick}
-                    disabled={!allAnswered}
-                    variant={allAnswered ? "default" : "outline"}
+            <h2 className="text-xl font-semibold text-foreground mb-6">
+              {currentQuestion.question}
+            </h2>
+
+            <RadioGroup
+              value={answers[currentQuestion.id] !== undefined ? answers[currentQuestion.id].toString() : undefined}
+              onValueChange={handleAnswerChange}
+              className="space-y-3"
+            >
+              {currentQuestion.options.map((option, index) => {
+                const isSelected = answers[currentQuestion.id] === index;
+                return (
+                  <div
+                    key={index}
+                    onClick={() => handleAnswerChange(index.toString())}
+                    className={cn(
+                      "flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
+                      isSelected
+                        ? "border-accent bg-accent/5 shadow-soft-sm"
+                        : "border-border hover:border-accent/30 hover:bg-muted/30"
+                    )}
                   >
-                    Review Answers
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    <RadioGroupItem
+                      value={index.toString()}
+                      id={`option-${index}`}
+                      className="mt-0.5"
+                    />
+                    <Label
+                      htmlFor={`option-${index}`}
+                      className="flex-1 cursor-pointer text-foreground leading-relaxed"
+                    >
+                      {option}
+                    </Label>
+                  </div>
+                );
+              })}
+            </RadioGroup>
+
+            {/* Navigation */}
+            <div className="flex justify-between mt-8 pt-6 border-t border-border">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentQuestionIndex === 0}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Previous
+              </Button>
+
+              {currentQuestionIndex < totalQuestions - 1 ? (
+                <Button
+                  onClick={handleNext}
+                  className="gap-2"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  disabled={!allAnswered}
+                  onClick={handleSubmitClick}
+                  className="gap-2"
+                >
+                  Review Answers
+                  <CheckCircle2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Progress Card */}
-          <Card>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-muted-foreground">Progress</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Answered</span>
-                  <span className="font-semibold">
-                    {answeredCount}/{totalQuestions}
-                  </span>
-                </div>
-                <div className="h-2 bg-muted rounded-full">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{
-                      width: `${(answeredCount / totalQuestions) * 100}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+            <div className="flex justify-between text-sm mb-3">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="font-semibold text-foreground">
+                {answeredCount}/{totalQuestions}
+              </span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-linear-to-r from-primary to-accent rounded-full transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
 
           {/* Question Navigator */}
-          <Card>
-            <CardContent>
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold">Question Navigator</h3>
-                <div className="grid grid-cols-4 gap-2">
-                  {questions.map((_, index) => {
-                    const status = getQuestionStatus(index);
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => handleQuestionNavigate(index)}
-                        className={cn(
-                          "aspect-square rounded text-sm font-semibold transition-colors",
-                          getQuestionButtonClass(status)
-                        )}
-                      >
-                        {index + 1}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded border-2 border-primary bg-primary"></div>
-                    <span className="text-muted-foreground">Current</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded border-2 border-green-500 bg-green-500"></div>
-                    <span className="text-muted-foreground">Answered</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded border border-border"></div>
-                    <span className="text-muted-foreground">Not Answered</span>
-                  </div>
-                </div>
+          <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Questions</h3>
+            <div className="grid grid-cols-5 gap-2 mb-4">
+              {questions.map((_, index) => {
+                const status = getQuestionStatus(index);
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleQuestionNavigate(index)}
+                    className={cn(
+                      "aspect-square rounded-lg text-sm font-semibold transition-all",
+                      status === "current" && "bg-primary text-primary-foreground shadow-soft-sm",
+                      status === "answered" && "bg-success text-white",
+                      status === "unanswered" && "bg-muted text-muted-foreground hover:bg-muted/80"
+                    )}
+                  >
+                    {index + 1}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded bg-primary" />
+                <span className="text-muted-foreground">Current</span>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded bg-success" />
+                <span className="text-muted-foreground">Answered</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded bg-muted" />
+                <span className="text-muted-foreground">Unanswered</span>
+              </div>
+            </div>
+          </div>
 
           {/* Submit Button */}
           <Button
             variant="destructive"
-            className="w-full"
+            className="w-full shadow-soft-sm"
             onClick={handleSubmitClick}
             disabled={!allAnswered}
           >

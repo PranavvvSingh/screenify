@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout/navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Clock, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 
 interface QuizInfo {
   id: string;
@@ -84,18 +83,20 @@ export default function QuizLandingPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar quizMode={true} />
-        <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-          <Card className="w-full max-w-3xl">
-          <CardHeader>
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-4 w-1/2 mt-2" />
-          </CardHeader>
-          <CardContent className="space-y-4">
+        {/* Navbar */}
+        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <div className="text-sm text-muted-foreground">Assessment Portal</div>
+          </div>
+        </nav>
+        <div className="max-w-3xl mx-auto px-6 py-12 space-y-6">
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <div className="p-6 rounded-2xl bg-card shadow-soft-md space-y-4">
             <Skeleton className="h-20 w-full" />
             <Skeleton className="h-20 w-full" />
-          </CardContent>
-        </Card>
+          </div>
         </div>
       </div>
     );
@@ -104,16 +105,23 @@ export default function QuizLandingPage() {
   if (error || isCompleted) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar quizMode={true} />
-        <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-          <Card className="w-full max-w-3xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-6 w-6 text-destructive" />
-              {isCompleted ? "Quiz Already Completed" : "Unable to Load Quiz"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Navbar */}
+        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <div className="text-sm text-muted-foreground">Assessment Portal</div>
+          </div>
+        </nav>
+        <div className="max-w-3xl mx-auto px-6 py-12">
+          <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+              </div>
+              <h1 className="text-xl font-semibold text-foreground">
+                {isCompleted ? "Quiz Already Completed" : "Unable to Load Quiz"}
+              </h1>
+            </div>
             <Alert variant={isCompleted ? "default" : "destructive"}>
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>
@@ -122,9 +130,9 @@ export default function QuizLandingPage() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
             {isCompleted && (
-              <div className="mt-6 p-4 bg-accent/50 border border-accent rounded-lg">
-                <div className="flex items-center gap-2 text-accent-foreground">
-                  <CheckCircle className="h-5 w-5" />
+              <div className="mt-6 p-4 rounded-xl bg-success/10 border border-success/20">
+                <div className="flex items-center gap-2 text-foreground">
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <p className="font-medium">
                     Thank you for completing this assessment!
                   </p>
@@ -135,8 +143,7 @@ export default function QuizLandingPage() {
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
         </div>
       </div>
     );
@@ -145,10 +152,15 @@ export default function QuizLandingPage() {
   if (!quizInfo) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar quizMode={true} />
-        <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-          <Card className="w-full max-w-3xl">
-          <CardContent className="pt-6">
+        {/* Navbar */}
+        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <div className="text-sm text-muted-foreground">Assessment Portal</div>
+          </div>
+        </nav>
+        <div className="max-w-3xl mx-auto px-6 py-12">
+          <div className="p-6 rounded-2xl bg-card shadow-soft-md">
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
@@ -156,8 +168,7 @@ export default function QuizLandingPage() {
                 Quiz information could not be loaded.
               </AlertDescription>
             </Alert>
-          </CardContent>
-        </Card>
+          </div>
         </div>
       </div>
     );
@@ -170,8 +181,15 @@ export default function QuizLandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar quizMode={true} />
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+          <div className="text-sm text-muted-foreground">Assessment Portal</div>
+        </div>
+      </nav>
+
+      <div className="max-w-3xl mx-auto px-6 py-12 space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">
@@ -182,135 +200,139 @@ export default function QuizLandingPage() {
           </p>
         </div>
 
-        {/* Assessment Overview */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Questions</p>
-                  <p className="text-xl font-bold text-foreground">
-                    {quizInfo.questionCount}
-                  </p>
-                </div>
+        {/* Assessment Overview Card */}
+        <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <FileText className="h-6 w-6 text-primary" />
               </div>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Duration</p>
-                  <p className="text-xl font-bold text-foreground">
-                    {quizInfo.estimatedTimeMinutes} mins
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Role Description - Collapsible */}
-            {quizInfo.role.description && (
-              <div className="mb-6">
-                <button
-                  onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="w-full text-left cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-foreground">About the Role</h3>
-                    {quizInfo.role.description.length > 150 && (
-                      <div className="flex items-center gap-1 text-xs text-primary">
-                        <span>{showFullDescription ? "Show less" : "Read more"}</span>
-                        {showFullDescription ? (
-                          <ChevronUp className="h-3 w-3" />
-                        ) : (
-                          <ChevronDown className="h-3 w-3" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </button>
-                <p className="text-sm text-muted-foreground">
-                  {showFullDescription
-                    ? quizInfo.role.description
-                    : truncateDescription(quizInfo.role.description)}
+              <div>
+                <p className="text-sm text-muted-foreground">Questions</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {quizInfo.questionCount}
                 </p>
               </div>
-            )}
-
-            {/* Skills - Condensed */}
-            {(quizInfo.role.requiredSkills.length > 0 || quizInfo.role.preferredSkills.length > 0) && (
-              <div className="flex flex-wrap gap-1.5">
-                {quizInfo.role.requiredSkills.slice(0, 8).map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-0.5 bg-primary/20 text-primary rounded text-xs font-medium"
-                  >
-                    {skill}
-                  </span>
-                ))}
-                {quizInfo.role.preferredSkills.slice(0, 4).map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded text-xs"
-                  >
-                    {skill}
-                  </span>
-                ))}
-                {(quizInfo.role.requiredSkills.length + quizInfo.role.preferredSkills.length > 12) && (
-                  <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs">
-                    +{quizInfo.role.requiredSkills.length + quizInfo.role.preferredSkills.length - 12} more
-                  </span>
-                )}
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-accent" />
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <div>
+                <p className="text-sm text-muted-foreground">Duration</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {quizInfo.estimatedTimeMinutes} mins
+                </p>
+              </div>
+            </div>
+          </div>
 
-        {/* Instructions - Focused */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Before You Start</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ul className="space-y-2.5">
-              <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                <div className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
-                  1
+          {/* Role Description - Collapsible */}
+          {quizInfo.role.description && (
+            <div className="mb-6">
+              <button
+                onClick={() => setShowFullDescription(!showFullDescription)}
+                className="w-full text-left"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-foreground">About the Role</h3>
+                  {quizInfo.role.description.length > 150 && (
+                    <div className="flex items-center gap-1 text-sm text-accent">
+                      <span>{showFullDescription ? "Show less" : "Read more"}</span>
+                      {showFullDescription ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  )}
                 </div>
-                <span>Complete all {quizInfo.questionCount} questions within {quizInfo.estimatedTimeMinutes} minutes</span>
-              </li>
-              <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                <div className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
-                  2
-                </div>
-                <span>Quiz will run in fullscreen mode. Exiting may be flagged</span>
-              </li>
-              <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                <div className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
-                  3
-                </div>
-                <span>You have only one attempt - cannot retake once submitted</span>
-              </li>
-            </ul>
+              </button>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {showFullDescription
+                  ? quizInfo.role.description
+                  : truncateDescription(quizInfo.role.description)}
+              </p>
+            </div>
+          )}
 
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
+          {/* Skills */}
+          {(quizInfo.role.requiredSkills.length > 0 || quizInfo.role.preferredSkills.length > 0) && (
+            <div className="flex flex-wrap gap-2">
+              {quizInfo.role.requiredSkills.slice(0, 8).map((skill, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
+                >
+                  {skill}
+                </span>
+              ))}
+              {quizInfo.role.preferredSkills.slice(0, 4).map((skill, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm"
+                >
+                  {skill}
+                </span>
+              ))}
+              {(quizInfo.role.requiredSkills.length + quizInfo.role.preferredSkills.length > 12) && (
+                <span className="px-3 py-1 bg-muted text-muted-foreground rounded-full text-sm">
+                  +{quizInfo.role.requiredSkills.length + quizInfo.role.preferredSkills.length - 12} more
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Instructions Card */}
+        <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Before You Start</h2>
+
+          <ul className="space-y-4 mb-6">
+            <li className="flex items-start gap-3">
+              <div className="shrink-0 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                1
+              </div>
+              <span className="text-muted-foreground pt-0.5">
+                Complete all {quizInfo.questionCount} questions within {quizInfo.estimatedTimeMinutes} minutes
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="shrink-0 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                2
+              </div>
+              <span className="text-muted-foreground pt-0.5">
+                Quiz will run in fullscreen mode. Exiting may be flagged
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="shrink-0 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                3
+              </div>
+              <span className="text-muted-foreground pt-0.5">
+                You have only one attempt - cannot retake once submitted
+              </span>
+            </li>
+          </ul>
+
+          <div className="p-4 rounded-xl bg-muted/50 border border-border mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
                 Ensure you have a stable internet connection and are in a quiet environment before starting.
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
+          </div>
 
-            <Button
-              onClick={handleStartAssessment}
-              size="lg"
-              className="w-full cursor-pointer"
-            >
-              Start Assessment
-            </Button>
-          </CardContent>
-        </Card>
+          <Button
+            onClick={handleStartAssessment}
+            size="lg"
+            className="w-full h-12 text-base font-medium shadow-soft-md hover:shadow-soft-lg transition-shadow cursor-pointer"
+          >
+            Start Assessment
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

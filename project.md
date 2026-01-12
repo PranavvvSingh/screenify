@@ -1,14 +1,12 @@
 # Screenify → AI-Assisted Candidate Screening Platform
 
----
-
 ## Executive Summary
 
 Create a quiz platform into a **recruiter-facing candidate screening system** that generates **standardized + resume-verified** technical assessments based on job requirements and resume analysis.
 
-**Core Innovation**: Two-part assessment combining standardized role-based questions (70%) with resume verification questions (30%), ensuring fair comparison while catching resume fraud.
+**Core Innovation**: Two-part assessment combining standardized role-based questions (70%) with resume verification questions (30%), ensuring fair comparison while catching resume fraud. Time based quiz environment alongiwth proctoring and anti-cheat measures.
 
-**Key Goal**: Generate challenging technical questions for fair candidate comparison while verifying claimed skills, helping recruiters identify truly skilled candidates.
+**Key Goal**: Generate challenging technical questions for fair candidate comparison while verifying claimed skills, helping recruiters identify truly skilled candidates. At the same time prevent cheating.
 
 ---
 

@@ -85,7 +85,7 @@ export function CandidateList({ quizzes, roleId }: CandidateListProps) {
                   <TableCell className="py-4">
                     <Badge
                       variant={isCompleted ? "default" : "secondary"}
-                      className={`${isCompleted ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20' : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20'} border text-sm`}
+                      className={`${isCompleted ? 'bg-primary/10 text-primary border-primary/20' : 'bg-accent/10 text-accent border-accent/20'} border text-sm`}
                     >
                       {isCompleted ? 'Completed' : 'Pending'}
                     </Badge>

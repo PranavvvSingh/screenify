@@ -12,7 +12,6 @@ import {
 import { signOut, useSession } from "@/lib/auth-client";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { useRouter, usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   children?: React.ReactNode; // For timer or other center content
@@ -32,34 +31,25 @@ export function Navbar({ children, quizMode = false }: NavbarProps) {
   const isRecruiterRoute = pathname?.startsWith("/recruiter");
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="container mx-auto px-4">
+    <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="max-w-6xl mx-auto px-6">
         <div className="flex h-16 items-center justify-between">
           {/* Left: Screenify Logo */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center">
-              <h1 className="font-pacifico text-3xl  text-primary">
-                Screenify
-              </h1>
+            <Link href="/" className="font-pacifico text-2xl text-gradient-primary">
+              Screenify
             </Link>
 
             {/* Navigation Links (only show for recruiters, hide in quiz mode) */}
             {!quizMode && session && isRecruiterRoute && (
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-1">
                 <Link href="/recruiter">
                   <Button
                     variant={pathname === "/recruiter" ? "default" : "ghost"}
                     size="sm"
+                    className="h-9"
                   >
                     Dashboard
-                  </Button>
-                </Link>
-                <Link href="/recruiter/candidates">
-                  <Button
-                    variant={pathname === "/recruiter/candidates" ? "default" : "ghost"}
-                    size="sm"
-                  >
-                    Candidates
                   </Button>
                 </Link>
               </div>
@@ -77,11 +67,11 @@ export function Navbar({ children, quizMode = false }: NavbarProps) {
               {session ? (
                 <>
                   {/* Desktop Menu */}
-                  <div className="hidden md:flex items-center gap-2">
+                  <div className="hidden md:flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">
                       {session.user.email}
                     </span>
-                    <Button variant="outline" size="sm" onClick={handleSignOut}>
+                    <Button variant="outline" size="sm" onClick={handleSignOut} className="h-9">
                       Sign Out
                     </Button>
                   </div>
@@ -89,7 +79,7 @@ export function Navbar({ children, quizMode = false }: NavbarProps) {
                   {/* Mobile Menu */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild className="md:hidden">
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" className="h-9 w-9">
                         <RxHamburgerMenu className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -103,9 +93,6 @@ export function Navbar({ children, quizMode = false }: NavbarProps) {
                           <DropdownMenuItem asChild>
                             <Link href="/recruiter">Dashboard</Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href="/recruiter/candidates">Candidates</Link>
-                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                         </>
                       )}
@@ -116,7 +103,7 @@ export function Navbar({ children, quizMode = false }: NavbarProps) {
                   </DropdownMenu>
                 </>
               ) : (
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild className="h-9">
                   <Link href="/">Sign In</Link>
                 </Button>
               )}

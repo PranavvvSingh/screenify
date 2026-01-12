@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout/navbar";
+import Link from "next/link";
 import Timer from "@/components/quiz/timer";
 import { QuizInterface } from "@/components/quiz/quiz-interface";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -156,13 +155,17 @@ export default function QuizTakePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar>
-          <Skeleton className="h-16 w-32" />
-        </Navbar>
-        <main className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto space-y-6">
+        {/* Navbar */}
+        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <Skeleton className="h-10 w-24 rounded-xl" />
+          </div>
+        </nav>
+        <main className="max-w-6xl mx-auto px-6 py-8">
+          <div className="space-y-6">
             <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-96 w-full" />
+            <Skeleton className="h-96 w-full rounded-2xl" />
           </div>
         </main>
       </div>
@@ -172,18 +175,20 @@ export default function QuizTakePage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <Card>
-              <CardContent className="pt-6">
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
+        {/* Navbar */}
+        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <div className="text-sm text-muted-foreground">Assessment Portal</div>
+          </div>
+        </nav>
+        <main className="max-w-4xl mx-auto px-6 py-8">
+          <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           </div>
         </main>
       </div>
@@ -196,19 +201,24 @@ export default function QuizTakePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar quizMode={true}>
-        <Timer
-          numOfQuestions={quizSession.questions.length}
-          stopTimer={stopTimer}
-          onTimeUp={handleTimeUp}
-          timePerQuestion={Math.floor((quizSession.duration * 60) / quizSession.questions.length)}
-        />
-      </Navbar>
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+      {/* Navbar with Timer */}
+      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+          <Timer
+            numOfQuestions={quizSession.questions.length}
+            stopTimer={stopTimer}
+            onTimeUp={handleTimeUp}
+            timePerQuestion={Math.floor((quizSession.duration * 60) / quizSession.questions.length)}
+          />
+        </div>
+      </nav>
+
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-foreground">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold text-foreground">
                 Technical Assessment
               </h1>
               <p className="text-muted-foreground">
@@ -218,17 +228,15 @@ export default function QuizTakePage() {
           </div>
 
           {submitting ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                  <p className="text-lg font-semibold">Submitting your assessment...</p>
-                  <p className="text-sm text-muted-foreground">
-                    Please wait while we process your responses
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="p-8 rounded-2xl bg-card shadow-soft-md">
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="text-lg font-semibold">Submitting your assessment...</p>
+                <p className="text-sm text-muted-foreground">
+                  Please wait while we process your responses
+                </p>
+              </div>
+            </div>
           ) : (
             <QuizInterface
               questions={quizSession.questions}

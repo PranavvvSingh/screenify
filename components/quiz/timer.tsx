@@ -54,17 +54,17 @@ const Timer = ({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2",
+        "flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 my-2 max-w-xs",
         isCritical && "animate-pulse", // Pulse animation when < 1 minute
         className
       )}
     >
-      <TimerIcon className={cn("h-5 w-5", getTimeColor())} />
-      <div className="text-center">
-        <p className={cn("text-2xl font-bold tabular-nums", getTimeColor())}>
+      <TimerIcon className={cn("h-5 w-5 shrink-0", getTimeColor())} />
+      <div className="text-center min-w-0">
+        <p className={cn("text-2xl font-bold tabular-nums whitespace-nowrap", getTimeColor())}>
           {formatTime(time)}
         </p>
-        <p className="text-xs text-muted-foreground">Time Remaining</p>
+        <p className="text-xs text-muted-foreground whitespace-nowrap">Time Remaining</p>
       </div>
     </div>
   );

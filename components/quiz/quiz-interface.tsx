@@ -31,9 +31,10 @@ interface QuizInterfaceProps {
   quizToken: string; // Token for API calls
   onSubmit: () => void;
   onTimePerQuestionChange?: (questionId: string, time: number) => void;
+  onQuestionChange?: (questionIndex: number) => void;
 }
 
-export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestionChange }: QuizInterfaceProps) {
+export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestionChange, onQuestionChange }: QuizInterfaceProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [questionStartTimes, setQuestionStartTimes] = useState<Record<string, number>>({});
@@ -55,7 +56,12 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
         [questionId]: Date.now(),
       }));
     }
-  }, [currentQuestionIndex, currentQuestion?.id, questionStartTimes]);
+
+    // Notify parent of question change
+    if (onQuestionChange) {
+      onQuestionChange(currentQuestionIndex);
+    }
+  }, [currentQuestionIndex, currentQuestion?.id, questionStartTimes, onQuestionChange]);
 
   // Calculate time spent on question when leaving it
   const recordTimeForCurrentQuestion = () => {
@@ -185,24 +191,25 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
         {/* Main Question Area */}
         <div className="lg:col-span-3 space-y-6">
           <Card>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4">
                   {currentQuestion.question}
                 </h3>
                 <RadioGroup
-                  value={answers[currentQuestion.id]?.toString()}
+                  value={answers[currentQuestion.id] !== undefined ? answers[currentQuestion.id].toString() : undefined}
                   onValueChange={handleAnswerChange}
                 >
                   {currentQuestion.options.map((option, index) => (
                     <div
                       key={index}
-                      className="flex items-center space-x-2 p-3 rounded-lg border border-border hover:bg-accent"
+                      onClick={() => handleAnswerChange(index.toString())}
+                      className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent cursor-pointer"
                     >
-                      <RadioGroupItem value={index.toString()} id={`option-${index}`} />
+                      <RadioGroupItem value={index.toString()} id={`option-${index}`} className="mt-0.5" />
                       <Label
                         htmlFor={`option-${index}`}
-                        className="flex-1 cursor-pointer"
+                        className="flex-1 cursor-pointer leading-relaxed"
                       >
                         {option}
                       </Label>
@@ -239,7 +246,7 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
         <div className="space-y-6">
           {/* Progress Card */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">Progress</span>
@@ -264,7 +271,7 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
 
           {/* Question Navigator */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent>
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold">Question Navigator</h3>
                 <div className="grid grid-cols-4 gap-2">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -82,8 +83,10 @@ export default function QuizLandingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 sm:px-6 lg:px-8 py-6">
-        <Card className="w-full max-w-3xl">
+      <div className="min-h-screen bg-background">
+        <Navbar quizMode={true} />
+        <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+          <Card className="w-full max-w-3xl">
           <CardHeader>
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-4 w-1/2 mt-2" />
@@ -93,14 +96,17 @@ export default function QuizLandingPage() {
             <Skeleton className="h-20 w-full" />
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   if (error || isCompleted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 sm:px-6 lg:px-8 py-6">
-        <Card className="w-full max-w-3xl">
+      <div className="min-h-screen bg-background">
+        <Navbar quizMode={true} />
+        <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+          <Card className="w-full max-w-3xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertCircle className="h-6 w-6 text-destructive" />
@@ -131,14 +137,17 @@ export default function QuizLandingPage() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   if (!quizInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 sm:px-6 lg:px-8 py-6">
-        <Card className="w-full max-w-3xl">
+      <div className="min-h-screen bg-background">
+        <Navbar quizMode={true} />
+        <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+          <Card className="w-full max-w-3xl">
           <CardContent className="pt-6">
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -149,6 +158,7 @@ export default function QuizLandingPage() {
             </Alert>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
@@ -159,8 +169,9 @@ export default function QuizLandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 sm:px-6 lg:px-8 py-6">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background">
+      <Navbar quizMode={true} />
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">

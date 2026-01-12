@@ -39,6 +39,7 @@ export default function QuizTakePage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [stopTimer, setStopTimer] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   useEffect(() => {
     async function startQuiz() {
@@ -195,7 +196,7 @@ export default function QuizTakePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar>
+      <Navbar quizMode={true}>
         <Timer
           numOfQuestions={quizSession.questions.length}
           stopTimer={stopTimer}
@@ -211,7 +212,7 @@ export default function QuizTakePage() {
                 Technical Assessment
               </h1>
               <p className="text-muted-foreground">
-                Question {1} of {quizSession.questions.length}
+                Question {currentQuestionIndex + 1} of {quizSession.questions.length}
               </p>
             </div>
           </div>
@@ -233,6 +234,7 @@ export default function QuizTakePage() {
               questions={quizSession.questions}
               quizToken={token}
               onSubmit={handleSubmit}
+              onQuestionChange={setCurrentQuestionIndex}
             />
           )}
         </div>

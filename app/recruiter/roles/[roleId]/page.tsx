@@ -1,11 +1,11 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AddCandidateModalWrapper } from "@/components/add-candidate-modal-wrapper";
+import { CandidateList } from "@/components/candidate-list";
+import { JobDescriptionCollapsible } from "@/components/job-description-collapsible";
 
 export default async function RoleDetailPage({ params }: { params: Promise<{ roleId: string }> }) {
   const { roleId } = await params;
@@ -47,7 +47,6 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
 
   const requiredSkills = jdData.required_skills || [];
   const preferredSkills = jdData.preferred_skills || [];
-  const allSkills = [...requiredSkills, ...preferredSkills];
 
   const experienceText = jdData.experience?.min_years && jdData.experience?.max_years
     ? `${jdData.experience.min_years}-${jdData.experience.max_years} years`
@@ -117,173 +116,23 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
       </div>
 
       {/* Role Requirements Section */}
-      <Card>
-        <CardHeader className="border-b">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-1 bg-primary rounded-full" />
-            <div>
-              <CardTitle className="text-xl">Job Description</CardTitle>
-              <CardDescription className="text-sm">Key qualifications and skills for this position</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-1">
-          <div className="space-y-6">
-            {/* Description Section */}
-            {role.description && (
-              <>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    <h3 className="text-lg font-semibold">Role Description</h3>
-                  </div>
-                  <p className="text-sm text-foreground leading-relaxed">
-                    {role.description}
-                  </p>
-                </div>
-                <Separator />
-              </>
-            )}
-
-            {/* Skills Section */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                  <path d="M2 17l10 5 10-5"/>
-                  <path d="M2 12l10 5 10-5"/>
-                </svg>
-                <h3 className="text-lg font-semibold">Required Skills</h3>
-              </div>
-              {allSkills.length > 0 ? (
-                <div className="flex gap-2 flex-wrap">
-                  {requiredSkills.map((skill, idx) => (
-                    <Badge key={idx} variant="default" className="px-3 py-1.5 text-sm font-medium">
-                      {skill}
-                    </Badge>
-                  ))}
-                  {preferredSkills.map((skill, idx) => (
-                    <Badge key={idx} variant="secondary" className="px-3 py-1.5 text-sm font-medium">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">No specific skills listed</p>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Experience Section */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                </svg>
-                <h3 className="text-lg font-semibold">Experience Required</h3>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className="px-4 py-2 text-base font-semibold">
-                  {experienceText}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Requirements List */}
-            {jdData.requirements && jdData.requirements.length > 0 && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                      <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                    <h3 className="text-lg font-semibold">Key Responsibilities & Requirements</h3>
-                  </div>
-                  <ul className="space-y-2 ml-6">
-                    {jdData.requirements.map((req, idx) => (
-                      <li key={idx} className="flex gap-3 text-sm text-foreground">
-                        <span className="text-primary mt-1">•</span>
-                        <span className="flex-1">{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <JobDescriptionCollapsible
+        description={role.description}
+        requiredSkills={requiredSkills}
+        preferredSkills={preferredSkills}
+        experienceText={experienceText}
+        requirements={jdData.requirements}
+      />
 
       {/* Candidates Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Candidates</CardTitle>
-          <CardDescription>All candidates invited for this role</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {totalCandidates === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-4 opacity-20">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-              <p className="text-lg font-medium">No candidates yet</p>
-              <p className="text-sm mt-2">Click &quot;Add Candidate&quot; to get started</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {role.quizzes.map((quiz) => {
-                const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-                const quizUrl = `${appUrl}/quiz/${quiz.token}`;
-                const statusColor = quiz.completed ? "text-green-600" : "text-blue-600";
-                const statusText = quiz.completed ? "Completed" : "Pending";
-
-                return (
-                  <div
-                    key={quiz.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
-                  >
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-medium text-base">{quiz.candidateName}</h4>
-                        <Badge
-                          variant={quiz.completed ? "default" : "secondary"}
-                          className={statusColor}
-                        >
-                          {statusText}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{quiz.candidateEmail}</p>
-                      <div className="flex items-center gap-2 pt-1">
-                        <p className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded max-w-md truncate">
-                          {quizUrl}
-                        </p>
-                      </div>
-                    </div>
-                    {quiz.result && (
-                      <div className="ml-4 text-right">
-                        <p className="text-2xl font-bold text-primary">
-                          {quiz.result.standardScore?.toFixed(0)}%
-                        </p>
-                        <p className="text-xs text-muted-foreground">Score</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Candidates</h2>
+          </div>
+        </div>
+        <CandidateList quizzes={role.quizzes} roleId={roleId} />
+      </div>
     </div>
   );
 }

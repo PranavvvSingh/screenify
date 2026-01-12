@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,7 +77,9 @@ export default function QuizCompletedPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 sm:px-6 lg:px-8 py-6">
+      <div className="min-h-screen bg-background">
+        <Navbar quizMode={true} />
+        <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <Skeleton className="h-8 w-3/4" />
@@ -87,13 +90,16 @@ export default function QuizCompletedPage() {
             <Skeleton className="h-20 w-full" />
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 sm:px-6 lg:px-8 py-6">
+      <div className="min-h-screen bg-background">
+        <Navbar quizMode={true} />
+        <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -109,13 +115,16 @@ export default function QuizCompletedPage() {
             </Alert>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 sm:px-6 lg:px-8 py-6">
-      <div className="w-full max-w-2xl space-y-6">
+    <div className="min-h-screen bg-background">
+      <Navbar quizMode={true} />
+      <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full max-w-2xl space-y-6">
         {/* Success Header */}
         <Card className="border-green-500/50">
           <CardHeader className="text-center pb-4">
@@ -134,39 +143,6 @@ export default function QuizCompletedPage() {
             </p>
           </CardContent>
         </Card>
-
-        {/* Quiz Details Card */}
-        {quizInfo && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Assessment Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Candidate</p>
-                  <p className="font-medium">{quizInfo.candidateName}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Role</p>
-                  <p className="font-medium">{quizInfo.roleTitle}</p>
-                </div>
-                {quizInfo.questionCount > 0 && (
-                  <div>
-                    <p className="text-muted-foreground">Questions</p>
-                    <p className="font-medium">{quizInfo.questionCount}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-muted-foreground">Submitted At</p>
-                  <p className="font-medium">
-                    {new Date(quizInfo.submittedAt).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Information Card */}
         <Card>
@@ -229,20 +205,7 @@ export default function QuizCompletedPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Closing Message */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center space-y-2">
-              <p className="text-sm font-medium text-foreground">
-                Thank you for your time and effort!
-              </p>
-              <p className="text-xs text-muted-foreground">
-                You may now close this window. This assessment cannot be retaken.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );

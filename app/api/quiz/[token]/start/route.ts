@@ -77,14 +77,31 @@ export async function POST(
       });
     }
 
-    // Create QuizResult to mark quiz as started
-    const quizResult = await prisma.quizResult.create({
-      data: {
-        quizId: quiz.id,
-        status: "IN_PROGRESS",
-        startedAt: new Date(),
-      },
-    });
+    // Create or get existing QuizResult to mark quiz as started
+    // Handle race conditions by catching unique constraint violations
+    let quizResult;
+    try {
+      quizResult = await prisma.quizResult.create({
+        data: {
+          quizId: quiz.id,
+          status: "IN_PROGRESS",
+          startedAt: new Date(),
+        },
+      });
+    } catch (error: any) {
+      // If unique constraint failed, fetch the existing result
+      if (error.code === 'P2002') {
+        quizResult = await prisma.quizResult.findUnique({
+          where: { quizId: quiz.id },
+        });
+
+        if (!quizResult) {
+          throw new Error("Failed to create or retrieve quiz result");
+        }
+      } else {
+        throw error;
+      }
+    }
 
     // Return quiz data with questions
     // Note: Questions are shuffled during quiz creation, so we return them as-is

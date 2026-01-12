@@ -27,86 +27,18 @@ The following have been implemented:
 
 ---
 
-## Remaining Tasks
-
-### **Phase 4: Candidate Flow**
-
-#### Task 13: Quiz Landing Page (Public Access)
-
-**Status**: Pending
-
-**Actions**:
-
-- [ ] Create `app/quiz/[token]/page.tsx` (public route, no auth)
-- [ ] Create API route `app/api/quiz/[token]/route.ts`
-- [ ] Validate quiz token exists and quiz not completed
-- [ ] Fetch associated role details and candidate name
-- [ ] Display:
-  - Welcome message with candidate name
-  - Role title
-  - Quiz instructions
-  - Question count and estimated time
-  - "Start Assessment" button
-- [ ] Handle invalid/expired/completed token with error message
-- [ ] Track quiz start time when button clicked
-
-**Files**:
-- `app/quiz/[token]/page.tsx`
-- `app/api/quiz/[token]/route.ts`
-
----
-
-#### Task 14: Question Structure with Type Tracking
-
-**Status**: Pending (Design Task)
-
-**Actions**:
-
-- [ ] Define question structure in TypeScript (already in `types/ollama.ts`)
-- [ ] Ensure all questions stored with type field:
-  - Standard questions (70%): type = 'STANDARD'
-  - Verification questions (30%): type = 'RESUME_VERIFICATION'
-- [ ] Questions fully shuffled before storage (candidate sees no distinction)
-
-**Files**:
-- Update `types/ollama.ts` if needed
-
----
-
 ### **Phase 5: Assessment System**
-
-#### Task 17: Quiz Taking Interface (Token-Based Access)
-
-**Status**: Pending
-
-**Actions**:
-
-- [ ] Update `app/quiz/[token]/page.tsx` to include quiz interface
-- [ ] Fetch quiz from database using token (no auth required)
-- [ ] Create `components/quiz-interface.tsx`
-- [ ] Display all questions (candidate sees them identically)
-- [ ] **No visual distinction** between standard and verification questions
-- [ ] Render MCQ options as radio buttons (shadcn RadioGroup)
-- [ ] Add "Next" / "Previous" navigation buttons
-- [ ] Track current question index
-- [ ] Store answers in component state
-- [ ] Add "Submit Quiz" button (disabled until all answered)
-- [ ] Show progress indicator (e.g., "Question 5 of 10")
-- [ ] Add confirmation dialog before submission
-- [ ] Track time spent per question
-
-**Files**:
-- `app/quiz/[token]/page.tsx`
-- `components/quiz-interface.tsx`
-- `components/question-card.tsx`
-
----
 
 #### Task 18: Proctoring System Implementation
 
-**Status**: Pending
+**Status**: DEFERRED (Post-MVP)
 
-**Actions**:
+**Note**: This task will be implemented after the core MVP flow is complete and working smoothly. Until then, proctoring-related fields will use dummy/empty values:
+- `proctoring_flags`: Empty object `{}`
+- `confidence_score`: Default value `100`
+- `anomalyIndicators`: Empty array `[]`
+
+**Actions** (for later implementation):
 
 - [ ] Create `hooks/use-proctoring.ts` custom hook
 - [ ] Implement fullscreen enforcement:
@@ -208,9 +140,13 @@ The following have been implemented:
 
 #### Task 22: Confidence Scoring with Anomaly Detection
 
-**Status**: Pending
+**Status**: DEFERRED (Post-MVP)
 
-**Actions**:
+**Note**: This task depends on Task 18 (Proctoring). Until proctoring is implemented, confidence scoring will use default values:
+- `confidence_score`: Always `100`
+- `anomalyIndicators`: Empty array `[]`
+
+**Actions** (for later implementation):
 
 - [ ] Extend evaluation engine
 - [ ] Calculate confidence score:

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -31,6 +31,7 @@ interface QuizResponse {
 
 export default function QuizLandingPage() {
   const params = useParams();
+  const router = useRouter();
   const token = params.token as string;
 
   const [loading, setLoading] = useState(true);
@@ -75,10 +76,8 @@ export default function QuizLandingPage() {
   }, [token]);
 
   const handleStartAssessment = () => {
-    // TODO: Navigate to quiz interface (will be implemented in Task 17)
-    // For now, just log
-    console.log("Starting quiz:", quizInfo?.id);
-    // router.push(`/quiz/${token}/take`);
+    // Navigate to quiz taking interface
+    router.push(`/quiz/${token}/take`);
   };
 
   if (loading) {

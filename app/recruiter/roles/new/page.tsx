@@ -182,7 +182,6 @@ export default function NewRolePage() {
 				</Link>
 				<div>
 					<h1 className='text-3xl font-bold text-foreground'>Create New Job Role</h1>
-					<p className='text-muted-foreground mt-1'>Fill in the details below to create a new job role</p>
 				</div>
 			</div>
 

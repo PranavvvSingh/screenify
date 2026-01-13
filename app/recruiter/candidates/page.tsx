@@ -136,11 +136,10 @@ export default function CandidatesPage() {
 	});
 
 	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 py-6">
+		<div className="space-y-8">
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-3xl font-bold text-foreground">Candidates</h1>
-					<p className="text-muted-foreground mt-2">View and manage all candidate assessments</p>
 				</div>
 			</div>
 

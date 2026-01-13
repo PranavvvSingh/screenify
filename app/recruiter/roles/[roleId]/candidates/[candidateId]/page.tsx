@@ -183,7 +183,7 @@ export default function CandidateDetailPage() {
 
 	if (loading) {
 		return (
-			<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'>
+			<div className='space-y-8'>
 				<div className='flex flex-col items-center justify-center min-h-[60vh] space-y-4'>
 					<Loader2 className='w-8 h-8 animate-spin text-primary' />
 					<p className='text-base font-medium text-foreground'>Loading candidate details...</p>
@@ -194,7 +194,7 @@ export default function CandidateDetailPage() {
 
 	if (error || !quiz) {
 		return (
-			<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'>
+			<div className='space-y-8'>
 				<Card>
 					<CardContent className='pt-6'>
 						<div className='text-center py-12'>
@@ -213,7 +213,7 @@ export default function CandidateDetailPage() {
 	const result = quiz.result;
 
 	return (
-		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6'>
+		<div className='space-y-8'>
 			{/* Header */}
 			<div className='flex items-center justify-between flex-wrap gap-4'>
 				<div className='flex items-center gap-4'>
@@ -224,7 +224,6 @@ export default function CandidateDetailPage() {
 					</Link>
 					<div>
 						<h1 className='text-3xl font-bold text-foreground'>{quiz.candidateName}</h1>
-						<p className='text-muted-foreground mt-1'>{quiz.role.title}</p>
 					</div>
 				</div>
 				<div className='flex gap-2'>

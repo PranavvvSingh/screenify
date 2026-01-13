@@ -39,13 +39,17 @@ export function JobDescriptionCollapsible({
           </div>
         </div>
         <ChevronDown
-          className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ease-in-out ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
       {/* Expandable Content */}
-      {isOpen && (
-        <div className="px-6 pb-6 pt-2 space-y-6 border-t border-border">
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-6 pb-6 pt-6 space-y-6 border-t border-border">
           {/* Description Section */}
           {description && (
             <div className="space-y-3">
@@ -114,7 +118,7 @@ export function JobDescriptionCollapsible({
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

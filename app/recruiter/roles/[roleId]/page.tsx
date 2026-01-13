@@ -66,9 +66,6 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-foreground">{role.title}</h1>
-            {jdData.job_title && jdData.job_title !== role.title && (
-              <p className="text-muted-foreground mt-1">{jdData.job_title}</p>
-            )}
           </div>
         </div>
         <AddCandidateModalWrapper roleId={roleId} />

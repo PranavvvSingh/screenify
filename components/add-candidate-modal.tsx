@@ -142,9 +142,11 @@ export function AddCandidateModal({ roleId, onSuccess }: AddCandidateModalProps)
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-xl">Add Candidate</DialogTitle>
-          <DialogDescription>
-            Upload a candidate&apos;s resume to generate a personalized assessment
-          </DialogDescription>
+          {!quizLink && (
+            <DialogDescription>
+              Upload a candidate&apos;s resume to generate a personalized assessment
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         {!quizLink ? (

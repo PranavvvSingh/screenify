@@ -1,26 +1,17 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AddCandidateModalWrapper } from "@/components/add-candidate-modal-wrapper";
 import { CandidateList } from "@/components/candidate-list";
 import { JobDescriptionCollapsible } from "@/components/job-description-collapsible";
 import { Users, CheckCircle, BarChart3, ArrowLeft } from "lucide-react";
+import { getJobRoleWithQuizzes } from "@/lib/db";
 
 export default async function RoleDetailPage({ params }: { params: Promise<{ roleId: string }> }) {
   const { roleId } = await params;
 
   // Fetch role data from database
-  const role = await prisma.jobRole.findUnique({
-    where: { id: roleId },
-    include: {
-      quizzes: {
-        include: {
-          result: true
-        }
-      }
-    }
-  });
+  const role = await getJobRoleWithQuizzes(roleId);
 
   if (!role) {
     notFound();

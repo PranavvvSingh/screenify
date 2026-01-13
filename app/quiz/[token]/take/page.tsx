@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import Timer from "@/components/quiz/timer";
 import { QuizInterface } from "@/components/quiz/quiz-interface";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -177,9 +176,8 @@ export default function QuizTakePage() {
       <div className="min-h-screen bg-background">
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
             <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
-            <div className="text-sm text-muted-foreground">Assessment Portal</div>
           </div>
         </nav>
         <main className="max-w-4xl mx-auto px-6 py-8">
@@ -199,9 +197,29 @@ export default function QuizTakePage() {
     return null;
   }
 
+  if (submitting) {
+    return (
+      <div className="min-h-screen bg-background">
+        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
+            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+          </div>
+        </nav>
+        <main className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-lg font-medium">Submitting your assessment...</p>
+            <p className="text-sm text-muted-foreground">
+              Please wait while we process your responses
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Navbar with Timer */}
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
@@ -214,38 +232,16 @@ export default function QuizTakePage() {
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-bold text-foreground">
-                Technical Assessment
-              </h1>
-              <p className="text-muted-foreground">
-                Question {currentQuestionIndex + 1} of {quizSession.questions.length}
-              </p>
-            </div>
-          </div>
-
-          {submitting ? (
-            <div className="p-8 rounded-2xl bg-card shadow-soft-md">
-              <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-lg font-semibold">Submitting your assessment...</p>
-                <p className="text-sm text-muted-foreground">
-                  Please wait while we process your responses
-                </p>
-              </div>
-            </div>
-          ) : (
-            <QuizInterface
-              questions={quizSession.questions}
-              quizToken={token}
-              onSubmit={handleSubmit}
-              onQuestionChange={setCurrentQuestionIndex}
-            />
-          )}
-        </div>
+      <main className="max-w-4xl mx-auto px-6 py-8">
+        <p className="text-sm text-muted-foreground mb-6">
+          Question {currentQuestionIndex + 1} of {quizSession.questions.length}
+        </p>
+        <QuizInterface
+          questions={quizSession.questions}
+          quizToken={token}
+          onSubmit={handleSubmit}
+          onQuestionChange={setCurrentQuestionIndex}
+        />
       </main>
     </div>
   );

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getQuizForStart, insertQuizResult, getQuizResultByQuizId } from "@/lib/db";
 
 /**
  * POST /api/quiz/[token]/start
@@ -23,29 +23,7 @@ export async function POST(
     }
 
     // Fetch quiz with questions
-    const quiz = await prisma.quiz.findUnique({
-      where: { token },
-      select: {
-        id: true,
-        candidateName: true,
-        candidateEmail: true,
-        duration: true,
-        completed: true,
-        questions: true,
-        jobRole: {
-          select: {
-            title: true,
-          },
-        },
-        result: {
-          select: {
-            id: true,
-            status: true,
-            startedAt: true,
-          },
-        },
-      },
-    });
+    const quiz = await getQuizForStart(token);
 
     // Check if quiz exists
     if (!quiz) {
@@ -81,19 +59,11 @@ export async function POST(
     // Handle race conditions by catching unique constraint violations
     let quizResult;
     try {
-      quizResult = await prisma.quizResult.create({
-        data: {
-          quizId: quiz.id,
-          status: "IN_PROGRESS",
-          startedAt: new Date(),
-        },
-      });
-    } catch (error: any) {
+      quizResult = await insertQuizResult(quiz.id);
+    } catch (error: unknown) {
       // If unique constraint failed, fetch the existing result
-      if (error.code === 'P2002') {
-        quizResult = await prisma.quizResult.findUnique({
-          where: { quizId: quiz.id },
-        });
+      if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+        quizResult = await getQuizResultByQuizId(quiz.id);
 
         if (!quizResult) {
           throw new Error("Failed to create or retrieve quiz result");

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import {
+  getQuizForSubmit,
+  getQuizForEvaluation,
+  updateQuizCompleted,
+  updateQuizResultSubmitted,
+  updateQuizResultEvaluated,
+} from "@/lib/db";
 
 /**
  * POST /api/quiz/[token]/submit
@@ -26,29 +32,7 @@ export async function POST(
     }
 
     // Fetch quiz with answers and result
-    const quiz = await prisma.quiz.findUnique({
-      where: { token },
-      select: {
-        id: true,
-        completed: true,
-        questions: true,
-        answers: {
-          select: {
-            id: true,
-            questionId: true,
-            answer: true,
-            isCorrect: true,
-            timeTaken: true,
-          },
-        },
-        result: {
-          select: {
-            id: true,
-            status: true,
-          },
-        },
-      },
-    });
+    const quiz = await getQuizForSubmit(token);
 
     if (!quiz) {
       return NextResponse.json(
@@ -74,26 +58,10 @@ export async function POST(
     }
 
     // Mark quiz as completed
-    await prisma.quiz.update({
-      where: { id: quiz.id },
-      data: {
-        completed: true,
-      },
-    });
+    await updateQuizCompleted(quiz.id);
 
     // Update quiz result with submission time and status
-    const submittedAt = new Date();
-    await prisma.quizResult.update({
-      where: { id: quiz.result.id },
-      data: {
-        submittedAt,
-        status: "SUBMITTED",
-        // Set dummy proctoring values as per Task 18 deferral
-        proctoringMetadata: {},
-        confidenceScore: 100,
-        anomalyIndicators: [],
-      },
-    });
+    await updateQuizResultSubmitted(quiz.result.id);
 
     // Trigger evaluation asynchronously (don't wait for it)
     // This prevents timeout issues and allows immediate response to candidate
@@ -106,7 +74,7 @@ export async function POST(
       success: true,
       message: "Quiz submitted successfully",
       quizId: quiz.id,
-      submittedAt,
+      submittedAt: new Date(),
       timedOut, // Pass through the timeout flag
     });
   } catch (error) {
@@ -129,21 +97,7 @@ export async function POST(
 async function triggerEvaluation(quizId: string, resultId: string) {
   try {
     // Fetch quiz with all data needed for evaluation
-    const quiz = await prisma.quiz.findUnique({
-      where: { id: quizId },
-      select: {
-        id: true,
-        questions: true,
-        answers: {
-          select: {
-            questionId: true,
-            answer: true,
-            isCorrect: true,
-            timeTaken: true,
-          },
-        },
-      },
-    });
+    const quiz = await getQuizForEvaluation(quizId);
 
     if (!quiz) {
       throw new Error("Quiz not found during evaluation");
@@ -213,8 +167,8 @@ async function triggerEvaluation(quizId: string, resultId: string) {
     });
 
     // Determine verification status
-    let verificationStatus: "VERIFIED" | "QUESTIONABLE" | "DISCREPANCY" =
-      "VERIFIED";
+    let verificationStatus: "VERIFIED" | "QUESTIONABLE" | "DISCREPANCY" | null =
+      null;
     if (verificationTotal > 0) {
       const verificationRate = verificationCorrect / verificationTotal;
       if (verificationRate >= 0.8) {
@@ -227,18 +181,14 @@ async function triggerEvaluation(quizId: string, resultId: string) {
     }
 
     // Update QuizResult with evaluation scores
-    await prisma.quizResult.update({
-      where: { id: resultId },
-      data: {
-        standardScore,
-        standardCorrect,
-        standardTotal,
-        verificationStatus: verificationTotal > 0 ? verificationStatus : null,
-        verificationCorrect,
-        verificationTotal,
-        skillBreakdown,
-        status: "EVALUATED",
-      },
+    await updateQuizResultEvaluated(resultId, {
+      standardScore,
+      standardCorrect,
+      standardTotal,
+      verificationStatus,
+      verificationCorrect,
+      verificationTotal,
+      skillBreakdown,
     });
 
     console.log(`Quiz ${quizId} evaluated successfully:`, {

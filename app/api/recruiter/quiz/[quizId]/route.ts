@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { getRecruiterByUserId, getQuizById } from "@/lib/db";
 
 export async function GET(
 	request: NextRequest,
@@ -20,34 +20,14 @@ export async function GET(
 		}
 
 		// Get recruiter
-		const recruiter = await prisma.recruiter.findUnique({
-			where: { userId: session.user.id }
-		});
+		const recruiter = await getRecruiterByUserId(session.user.id);
 
 		if (!recruiter) {
 			return NextResponse.json({ error: "Recruiter not found" }, { status: 404 });
 		}
 
 		// Fetch quiz with all related data
-		const quiz = await prisma.quiz.findUnique({
-			where: { id: quizId },
-			include: {
-				jobRole: {
-					select: {
-						id: true,
-						title: true,
-						description: true,
-						recruiterId: true
-					}
-				},
-				result: true,
-				answers: {
-					orderBy: {
-						submittedAt: "asc"
-					}
-				}
-			}
-		});
+		const quiz = await getQuizById(quizId);
 
 		if (!quiz) {
 			return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
@@ -78,9 +58,8 @@ export async function GET(
 				questionId: question.id,
 				question: question.question,
 				options: question.options,
-				correctAnswer: correctAnswerIndex !== undefined ? question.options[correctAnswerIndex] : undefined,
-				candidateAnswer: candidateAnswerIndex !== null ? question.options[candidateAnswerIndex] : null,
-				isCorrect: answer?.isCorrect || false,
+				correctAnswer: correctAnswerIndex ?? null,
+				candidateAnswer: candidateAnswerIndex,
 				timeTaken: answer?.timeTaken || 0
 			};
 		});
@@ -96,9 +75,8 @@ export async function GET(
 				question: question.question,
 				options: question.options,
 				skill: question.skill,
-				correctAnswer: correctAnswerIndex !== undefined ? question.options[correctAnswerIndex] : undefined,
-				candidateAnswer: candidateAnswerIndex !== null ? question.options[candidateAnswerIndex] : null,
-				isCorrect: answer?.isCorrect || false,
+				correctAnswer: correctAnswerIndex ?? null,
+				candidateAnswer: candidateAnswerIndex,
 				timeTaken: answer?.timeTaken || 0
 			};
 		});

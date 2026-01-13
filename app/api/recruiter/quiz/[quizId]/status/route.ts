@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { getRecruiterByUserId, getQuizWithOwnership, updateQuizCandidateStatus } from "@/lib/db";
 
 export async function PATCH(
 	request: NextRequest,
@@ -20,9 +20,7 @@ export async function PATCH(
 		}
 
 		// Get recruiter
-		const recruiter = await prisma.recruiter.findUnique({
-			where: { userId: session.user.id }
-		});
+		const recruiter = await getRecruiterByUserId(session.user.id);
 
 		if (!recruiter) {
 			return NextResponse.json({ error: "Recruiter not found" }, { status: 404 });
@@ -41,16 +39,7 @@ export async function PATCH(
 		}
 
 		// Fetch quiz to verify ownership
-		const quiz = await prisma.quiz.findUnique({
-			where: { id: quizId },
-			include: {
-				jobRole: {
-					select: {
-						recruiterId: true
-					}
-				}
-			}
-		});
+		const quiz = await getQuizWithOwnership(quizId);
 
 		if (!quiz) {
 			return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
@@ -62,12 +51,7 @@ export async function PATCH(
 		}
 
 		// Update candidate status
-		const updatedQuiz = await prisma.quiz.update({
-			where: { id: quizId },
-			data: {
-				candidateStatus: status
-			}
-		});
+		const updatedQuiz = await updateQuizCandidateStatus(quizId, status);
 
 		return NextResponse.json({
 			success: true,

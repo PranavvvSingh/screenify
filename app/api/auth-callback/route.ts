@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
+import { getUserWithRecruiter, insertRecruiter } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,12 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user already has a recruiter record
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: {
-        recruiter: true,
-      },
-    });
+    const user = await getUserWithRecruiter(session.user.id);
 
     // If user already has a recruiter role, redirect to recruiter dashboard
     if (user?.recruiter) {
@@ -32,11 +27,7 @@ export async function GET(request: NextRequest) {
 
     // User has no role yet - create recruiter record automatically
     // Note: Only recruiters have user accounts (candidates access via token links)
-    await prisma.recruiter.create({
-      data: {
-        userId: session.user.id,
-      },
-    });
+    await insertRecruiter(session.user.id);
 
     // Redirect to recruiter dashboard
     return NextResponse.redirect(new URL("/recruiter", request.url));

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRecruiterAPI } from "@/lib/auth-utils";
-import { prisma } from "@/lib/prisma";
+import { insertJobRole } from "@/lib/db";
 import { generateStandardQuestions } from "@/lib/ollama";
 import type { JDRequirements } from "@/types/ollama";
 import type { Prisma } from "@prisma/client";
@@ -77,15 +77,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Save role to database
-    const role = await prisma.jobRole.create({
-      data: {
-        title: title.trim(),
-        description: description.trim(),
-        recruiterId: recruiter.id,
-        jd: requirements as unknown as Prisma.InputJsonValue,
-        baseQuestions: baseQuestions as unknown as Prisma.InputJsonValue,
-        totalQuestions: totalQuestions,
-      },
+    const role = await insertJobRole({
+      title: title.trim(),
+      description: description.trim(),
+      recruiterId: recruiter.id,
+      jd: requirements as unknown as Prisma.InputJsonValue,
+      baseQuestions: baseQuestions as unknown as Prisma.InputJsonValue,
+      totalQuestions: totalQuestions,
     });
 
     console.log("Role created successfully:", role.id);

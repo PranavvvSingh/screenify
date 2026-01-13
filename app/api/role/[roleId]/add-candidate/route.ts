@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireRecruiterAPI } from "@/lib/auth-utils";
+import { getJobRoleById, getQuizByCandidate, insertQuiz } from "@/lib/db";
 import {
   extractResumeProfile,
   generateVerificationQuestions,
@@ -31,15 +31,7 @@ export async function POST(
     }
 
     // Verify role exists and belongs to this recruiter
-    const role = await prisma.jobRole.findUnique({
-      where: { id: roleId },
-      select: {
-        id: true,
-        recruiterId: true,
-        baseQuestions: true,
-        totalQuestions: true,
-      },
-    });
+    const role = await getJobRoleById(roleId);
 
     if (!role) {
       return NextResponse.json({ error: "Role not found" }, { status: 404 });
@@ -53,12 +45,7 @@ export async function POST(
     }
 
     // Check if candidate already exists for this role
-    const existingQuiz = await prisma.quiz.findFirst({
-      where: {
-        jobRoleId: roleId,
-        candidateEmail: candidateEmail,
-      },
-    });
+    const existingQuiz = await getQuizByCandidate(roleId, candidateEmail);
 
     if (existingQuiz) {
       return NextResponse.json(
@@ -107,15 +94,12 @@ export async function POST(
     const duration = totalQuestions * 1;
 
     // Create quiz record
-    const quiz = await prisma.quiz.create({
-      data: {
-        jobRoleId: roleId,
-        candidateName,
-        candidateEmail,
-        questions: allQuestions as unknown as Prisma.InputJsonValue[],
-        duration,
-        completed: false,
-      },
+    const quiz = await insertQuiz({
+      jobRoleId: roleId,
+      candidateName,
+      candidateEmail,
+      questions: allQuestions as unknown as Prisma.InputJsonValue[],
+      duration,
     });
     console.log("Quiz created with ID:", quiz.id);
 

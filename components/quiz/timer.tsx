@@ -54,7 +54,7 @@ const Timer = ({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 my-2 max-w-xs",
+        "flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-0.6 my-3 max-w-xs shadow-sm",
         isCritical && "animate-pulse", // Pulse animation when < 1 minute
         className
       )}

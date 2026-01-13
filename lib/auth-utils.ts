@@ -1,7 +1,7 @@
 import { auth } from "./auth";
-import { prisma } from "./prisma";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getUserWithRecruiter } from "./db";
 
 export async function getServerSession() {
   const session = await auth.api.getSession({
@@ -21,10 +21,7 @@ export async function requireAuth() {
 export async function requireRecruiter() {
   const session = await requireAuth();
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { recruiter: true },
-  });
+  const user = await getUserWithRecruiter(session.user.id);
 
   if (!user?.recruiter) {
     // Don't redirect to candidate - user might not have that role either
@@ -47,10 +44,7 @@ export async function requireRecruiterAPI() {
     throw new Error("UNAUTHORIZED");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { recruiter: true },
-  });
+  const user = await getUserWithRecruiter(session.user.id);
 
   if (!user?.recruiter) {
     throw new Error("FORBIDDEN");
@@ -60,10 +54,7 @@ export async function requireRecruiterAPI() {
 }
 
 export async function getUserRole(userId: string): Promise<"recruiter" | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { recruiter: true },
-  });
+  const user = await getUserWithRecruiter(userId);
 
   if (!user) return null;
   if (user.recruiter) return "recruiter";

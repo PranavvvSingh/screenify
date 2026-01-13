@@ -73,13 +73,10 @@ function QuizLandingPreview({ onStart }: { onStart: () => void }) {
     <div className="min-h-screen bg-background">
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
           <Link href="/dev-preview" className="font-pacifico text-2xl text-gradient-primary">
             Screenify
           </Link>
-          <div className="text-sm text-muted-foreground">
-            Assessment Portal
-          </div>
         </div>
       </nav>
 

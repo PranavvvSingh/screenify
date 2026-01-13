@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getQuizForAnswer, upsertQuizAnswer } from "@/lib/db";
 
 /**
  * POST /api/quiz/[token]/answer
@@ -34,14 +34,7 @@ export async function POST(
     }
 
     // Fetch quiz to validate and get question details
-    const quiz = await prisma.quiz.findUnique({
-      where: { token },
-      select: {
-        id: true,
-        completed: true,
-        questions: true,
-      },
-    });
+    const quiz = await getQuizForAnswer(token);
 
     if (!quiz) {
       return NextResponse.json(
@@ -77,27 +70,12 @@ export async function POST(
     const isCorrect = question.correctAnswer === answer;
 
     // Upsert answer (create or update if already exists)
-    const quizAnswer = await prisma.quizAnswer.upsert({
-      where: {
-        quizId_questionId: {
-          quizId: quiz.id,
-          questionId,
-        },
-      },
-      update: {
-        answer: answer.toString(),
-        isCorrect,
-        timeTaken: timeTaken || 0,
-        submittedAt: new Date(),
-      },
-      create: {
-        quizId: quiz.id,
-        questionId,
-        answer: answer.toString(),
-        isCorrect,
-        timeTaken: timeTaken || 0,
-        submittedAt: new Date(),
-      },
+    const quizAnswer = await upsertQuizAnswer({
+      quizId: quiz.id,
+      questionId,
+      answer: answer.toString(),
+      isCorrect,
+      timeTaken: timeTaken || 0,
     });
 
     return NextResponse.json({

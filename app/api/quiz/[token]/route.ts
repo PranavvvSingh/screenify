@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getQuizByToken } from "@/lib/db";
 
 /**
  * GET /api/quiz/[token]
@@ -22,33 +22,7 @@ export async function GET(
     }
 
     // Fetch quiz with related role information
-    const quiz = await prisma.quiz.findUnique({
-      where: { token },
-      select: {
-        id: true,
-        candidateName: true,
-        candidateEmail: true,
-        duration: true,
-        completed: true,
-        createdAt: true,
-        questions: true,
-        jobRole: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            jd: true,
-          },
-        },
-        result: {
-          select: {
-            id: true,
-            status: true,
-            submittedAt: true,
-          },
-        },
-      },
-    });
+    const quiz = await getQuizByToken(token);
 
     // Check if quiz exists
     if (!quiz) {
@@ -69,10 +43,6 @@ export async function GET(
         { status: 410 } // 410 Gone - resource no longer available
       );
     }
-
-    // Check if quiz has expired (optional - based on business logic)
-    // For now, we'll allow quizzes to be taken anytime after creation
-    // Add expiration logic here if needed
 
     // Calculate question count from stored questions
     const questions = quiz.questions as Array<{ id: string; question: string }>;

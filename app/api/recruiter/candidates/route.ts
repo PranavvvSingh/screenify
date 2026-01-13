@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { getRecruiterByUserId, getQuizzesByRecruiter } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
 	try {
@@ -15,9 +15,7 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Get recruiter
-		const recruiter = await prisma.recruiter.findUnique({
-			where: { userId: session.user.id }
-		});
+		const recruiter = await getRecruiterByUserId(session.user.id);
 
 		if (!recruiter) {
 			return NextResponse.json({ error: "Recruiter not found" }, { status: 404 });
@@ -33,32 +31,10 @@ export async function GET(request: NextRequest) {
 		const sortOrder = searchParams.get("sortOrder") || "desc"; // asc, desc
 
 		// Fetch all quizzes for recruiter's roles with results
-		const quizzes = await prisma.quiz.findMany({
-			where: {
-				jobRole: {
-					recruiterId: recruiter.id
-				},
-				// Filter by completion status if provided
-				...(status && status !== "ALL" && {
-					completed: status === "IN_PROGRESS" ? false : true
-				})
-			},
-			include: {
-				jobRole: {
-					select: {
-						id: true,
-						title: true,
-						description: true
-					}
-				},
-				result: true
-			},
-			orderBy:
-				sortBy === "candidateName"
-					? { candidateName: sortOrder as "asc" | "desc" }
-					: sortBy === "submittedAt"
-						? { createdAt: sortOrder as "asc" | "desc" }
-						: undefined
+		const quizzes = await getQuizzesByRecruiter(recruiter.id, {
+			status: status || undefined,
+			sortBy,
+			sortOrder: sortOrder as "asc" | "desc"
 		});
 
 		// Filter and map the results

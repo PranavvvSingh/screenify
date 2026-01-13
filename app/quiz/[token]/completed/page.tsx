@@ -78,9 +78,8 @@ export default function QuizCompletedPage() {
       <div className="min-h-screen bg-background">
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
             <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
-            <div className="text-sm text-muted-foreground">Assessment Portal</div>
           </div>
         </nav>
         <div className="max-w-2xl mx-auto px-6 py-12 space-y-6">
@@ -103,9 +102,8 @@ export default function QuizCompletedPage() {
       <div className="min-h-screen bg-background">
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
             <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
-            <div className="text-sm text-muted-foreground">Assessment Portal</div>
           </div>
         </nav>
         <div className="max-w-2xl mx-auto px-6 py-12">
@@ -130,9 +128,8 @@ export default function QuizCompletedPage() {
     <div className="min-h-screen bg-background">
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
           <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
-          <div className="text-sm text-muted-foreground">Assessment Portal</div>
         </div>
       </nav>
 

@@ -18,9 +18,8 @@ interface QuestionDetail {
 	questionId: string;
 	question: string;
 	options: string[];
-	correctAnswer: string;
-	candidateAnswer: string | null;
-	isCorrect: boolean;
+	correctAnswer: number | null;
+	candidateAnswer: number | null;
 	timeTaken: number;
 	skill?: string;
 }
@@ -333,58 +332,66 @@ export default function CandidateDetailPage() {
 							</CardHeader>
 							<CardContent>
 								<div className='space-y-4'>
-									{quiz.standardDetails.map((detail, index) => (
-										<div key={detail.questionId} className='p-4 rounded-lg border bg-card'>
-											<div className='flex items-start gap-3 mb-3'>
-												<div className='flex-1 min-w-0'>
-													<div className='flex items-start justify-between gap-2 mb-3'>
-														<p className='font-medium'>
-															{index + 1}. {detail.question}
-														</p>
-														{detail.skill && (
-															<Badge variant='secondary' className='shrink-0'>
-																{detail.skill}
-															</Badge>
-														)}
-													</div>
-													<div className='space-y-2'>
-														{detail.options.map((option, optIndex) => {
-															const isCorrect = option === detail.correctAnswer;
-															const isSelected = option === detail.candidateAnswer;
-															const optionLabel = String.fromCharCode(65 + optIndex); // A, B, C, D
-															return (
-																<div
-																	key={optIndex}
-																	className={`p-3 rounded border ${
-																		isCorrect
-																			? "bg-green-50/50 dark:bg-green-950/10 border-green-400/50"
-																			: isSelected && !isCorrect
-																			? "bg-red-50/50 dark:bg-red-950/10 border-red-400/50"
-																			: "bg-muted/30 border-muted"
-																	}`}
-																>
-																	<div className='flex items-center gap-3 text-sm'>
-																		<span className='font-semibold text-muted-foreground shrink-0'>{optionLabel}.</span>
-																		<span
-																			className={
-																				isCorrect
-																					? "font-semibold text-green-700 dark:text-green-500"
-																					: isSelected
-																					? "font-medium text-red-700 dark:text-red-500"
-																					: "text-muted-foreground"
-																			}
-																		>
-																			{option}
-																		</span>
+									{quiz.standardDetails.map((detail, index) => {
+										const isAnswerCorrect = detail.candidateAnswer === detail.correctAnswer;
+										return (
+											<div key={detail.questionId} className='p-4 rounded-lg border bg-card'>
+												<div className='flex items-start gap-3 mb-3'>
+													{isAnswerCorrect ? (
+														<CheckCircle2 className='w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5' />
+													) : (
+														<XCircle className='w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
+													)}
+													<div className='flex-1 min-w-0'>
+														<div className='flex items-start justify-between gap-2 mb-3'>
+															<p className='font-medium'>
+																{index + 1}. {detail.question}
+															</p>
+															{detail.skill && (
+																<Badge variant='secondary' className='shrink-0'>
+																	{detail.skill}
+																</Badge>
+															)}
+														</div>
+														<div className='space-y-2'>
+															{detail.options.map((option, optIndex) => {
+																const isCorrectOption = optIndex === detail.correctAnswer;
+																const isSelected = optIndex === detail.candidateAnswer;
+																const optionLabel = String.fromCharCode(65 + optIndex); // A, B, C, D
+																return (
+																	<div
+																		key={optIndex}
+																		className={`p-3 rounded border ${
+																			isCorrectOption
+																				? "bg-green-50/50 dark:bg-green-950/10 border-green-400/50"
+																				: isSelected && !isCorrectOption
+																				? "bg-red-50/50 dark:bg-red-950/10 border-red-400/50"
+																				: "bg-muted/30 border-muted"
+																		}`}
+																	>
+																		<div className='flex items-center gap-3 text-sm'>
+																			<span className='font-semibold text-muted-foreground shrink-0'>{optionLabel}.</span>
+																			<span
+																				className={
+																					isCorrectOption
+																						? "font-semibold text-green-700 dark:text-green-500"
+																						: isSelected
+																						? "font-medium text-red-700 dark:text-red-500"
+																						: "text-muted-foreground"
+																				}
+																			>
+																				{option}
+																			</span>
+																		</div>
 																	</div>
-																</div>
-															);
-														})}
+																);
+															})}
+														</div>
 													</div>
 												</div>
 											</div>
-										</div>
-									))}
+										);
+									})}
 								</div>
 							</CardContent>
 						</Card>
@@ -401,56 +408,59 @@ export default function CandidateDetailPage() {
 							</CardHeader>
 							<CardContent>
 								<div className='space-y-4'>
-									{quiz.verificationDetails.map((detail, index) => (
-										<div key={detail.questionId} className='p-4 rounded-lg border bg-card'>
-											<div className='flex items-start gap-3 mb-3'>
-												{detail.isCorrect ? (
-													<CheckCircle2 className='w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5' />
-												) : (
-													<XCircle className='w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
-												)}
-												<div className='flex-1 min-w-0'>
-													<p className='font-medium mb-3'>
-														{index + 1}. {detail.question}
-													</p>
-													<div className='space-y-2'>
-														{detail.options.map((option, optIndex) => {
-															const isCorrect = option === detail.correctAnswer;
-															const isSelected = option === detail.candidateAnswer;
-															const optionLabel = String.fromCharCode(65 + optIndex); // A, B, C, D
-															return (
-																<div
-																	key={optIndex}
-																	className={`p-3 rounded border ${
-																		isCorrect
-																			? "bg-green-50/50 dark:bg-green-950/10 border-green-400/50"
-																			: isSelected && !isCorrect
-																			? "bg-red-50/50 dark:bg-red-950/10 border-red-400/50"
-																			: "bg-muted/30 border-muted"
-																	}`}
-																>
-																	<div className='flex items-center gap-3 text-sm'>
-																		<span className='font-semibold text-muted-foreground shrink-0'>{optionLabel}.</span>
-																		<span
-																			className={
-																				isCorrect
-																					? "font-semibold text-green-700 dark:text-green-500"
-																					: isSelected
-																					? "font-medium text-red-700 dark:text-red-500"
-																					: "text-muted-foreground"
-																			}
-																		>
-																			{option}
-																		</span>
+									{quiz.verificationDetails.map((detail, index) => {
+										const isAnswerCorrect = detail.candidateAnswer === detail.correctAnswer;
+										return (
+											<div key={detail.questionId} className='p-4 rounded-lg border bg-card'>
+												<div className='flex items-start gap-3 mb-3'>
+													{isAnswerCorrect ? (
+														<CheckCircle2 className='w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5' />
+													) : (
+														<XCircle className='w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
+													)}
+													<div className='flex-1 min-w-0'>
+														<p className='font-medium mb-3'>
+															{index + 1}. {detail.question}
+														</p>
+														<div className='space-y-2'>
+															{detail.options.map((option, optIndex) => {
+																const isCorrectOption = optIndex === detail.correctAnswer;
+																const isSelected = optIndex === detail.candidateAnswer;
+																const optionLabel = String.fromCharCode(65 + optIndex); // A, B, C, D
+																return (
+																	<div
+																		key={optIndex}
+																		className={`p-3 rounded border ${
+																			isCorrectOption
+																				? "bg-green-50/50 dark:bg-green-950/10 border-green-400/50"
+																				: isSelected && !isCorrectOption
+																				? "bg-red-50/50 dark:bg-red-950/10 border-red-400/50"
+																				: "bg-muted/30 border-muted"
+																		}`}
+																	>
+																		<div className='flex items-center gap-3 text-sm'>
+																			<span className='font-semibold text-muted-foreground shrink-0'>{optionLabel}.</span>
+																			<span
+																				className={
+																					isCorrectOption
+																						? "font-semibold text-green-700 dark:text-green-500"
+																						: isSelected
+																						? "font-medium text-red-700 dark:text-red-500"
+																						: "text-muted-foreground"
+																				}
+																			>
+																				{option}
+																			</span>
+																		</div>
 																	</div>
-																</div>
-															);
-														})}
+																);
+															})}
+														</div>
 													</div>
 												</div>
 											</div>
-										</div>
-									))}
+										);
+									})}
 								</div>
 							</CardContent>
 						</Card>

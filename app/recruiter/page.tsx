@@ -2,22 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Briefcase, Users, FileText, BarChart3, UserCheck } from "lucide-react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { getJobRolesWithQuizzes } from "@/lib/db";
 
 export default async function RecruiterDashboard() {
   // Fetch all roles with their quizzes
-  const roles = await prisma.jobRole.findMany({
-    include: {
-      quizzes: {
-        include: {
-          result: true
-        }
-      }
-    },
-    orderBy: {
-      createdAt: "desc"
-    }
-  });
+  const roles = await getJobRolesWithQuizzes();
 
   // Calculate statistics
   const totalRoles = roles.length;

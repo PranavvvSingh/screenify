@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -85,9 +84,8 @@ export default function QuizLandingPage() {
       <div className="min-h-screen bg-background">
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
             <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
-            <div className="text-sm text-muted-foreground">Assessment Portal</div>
           </div>
         </nav>
         <div className="max-w-3xl mx-auto px-6 py-12 space-y-6">
@@ -107,41 +105,33 @@ export default function QuizLandingPage() {
       <div className="min-h-screen bg-background">
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
             <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
-            <div className="text-sm text-muted-foreground">Assessment Portal</div>
           </div>
         </nav>
-        <div className="max-w-3xl mx-auto px-6 py-12">
-          <div className="p-6 rounded-2xl bg-card shadow-soft-md">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
-                <AlertCircle className="h-6 w-6 text-destructive" />
-              </div>
-              <h1 className="text-xl font-semibold text-foreground">
-                {isCompleted ? "Quiz Already Completed" : "Unable to Load Quiz"}
-              </h1>
+        <div className="max-w-6xl mx-auto px-6 py-20 flex justify-center">
+          <div className="w-full max-w-md py-8 rounded-2xl bg-card shadow-soft-md text-center">
+            <div className="mx-auto h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mb-6">
+              {isCompleted ? (
+                <CheckCircle className="h-8 w-8 text-success" />
+              ) : (
+                <AlertCircle className="h-8 w-8 text-destructive" />
+              )}
             </div>
-            <Alert variant={isCompleted ? "default" : "destructive"}>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>
-                {isCompleted ? "Already Submitted" : "Error"}
-              </AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-            {isCompleted && (
-              <div className="mt-6 p-4 rounded-xl bg-success/10 border border-success/20">
-                <div className="flex items-center gap-2 text-foreground">
-                  <CheckCircle className="h-5 w-5 text-success" />
-                  <p className="font-medium">
-                    Thank you for completing this assessment!
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Your responses have been submitted to the recruiter. You will
-                  be contacted if you are selected for the next round.
-                </p>
-              </div>
+            <h1 className="text-2xl font-semibold text-primary mb-3">
+              {isCompleted ? "Quiz Submitted" : "Unable to Load Quiz"}
+            </h1>
+            <p className="text-muted-foreground">
+              {isCompleted
+                ? "Your responses have been submitted successfully. The recruiter will contact you if you are selected for the next round."
+                : error}
+            </p>
+            {!isCompleted && (
+              <Alert variant="destructive" className="text-left mt-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
           </div>
         </div>
@@ -154,20 +144,21 @@ export default function QuizLandingPage() {
       <div className="min-h-screen bg-background">
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
             <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
-            <div className="text-sm text-muted-foreground">Assessment Portal</div>
           </div>
         </nav>
-        <div className="max-w-3xl mx-auto px-6 py-12">
-          <div className="p-6 rounded-2xl bg-card shadow-soft-md">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>
-                Quiz information could not be loaded.
-              </AlertDescription>
-            </Alert>
+        <div className="max-w-6xl mx-auto px-6 py-12 flex justify-center">
+          <div className="w-full max-w-md p-8 rounded-2xl bg-card shadow-soft-md text-center">
+            <div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mb-6">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <h1 className="text-2xl font-semibold text-primary mb-3">
+              Unable to Load Quiz
+            </h1>
+            <p className="text-muted-foreground">
+              Quiz information could not be loaded. Please check your link or try again later.
+            </p>
           </div>
         </div>
       </div>
@@ -183,9 +174,8 @@ export default function QuizLandingPage() {
     <div className="min-h-screen bg-background">
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
           <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
-          <div className="text-sm text-muted-foreground">Assessment Portal</div>
         </div>
       </nav>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -40,7 +40,10 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
   const [questionStartTimes, setQuestionStartTimes] = useState<Record<string, number>>({});
   const [questionTimeTaken, setQuestionTimeTaken] = useState<Record<string, number>>({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
-  const [savingAnswer, setSavingAnswer] = useState(false);
+
+  // Ref to track pending debounced save
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingAnswerRef = useRef<{ questionId: string; answer: number; timeTaken: number } | null>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
@@ -64,6 +67,49 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
     }
   }, [currentQuestionIndex, currentQuestion?.id, questionStartTimes, onQuestionChange]);
 
+  // Cleanup: save pending answer on unmount
+  useEffect(() => {
+    return () => {
+      // If there's a pending answer when component unmounts, save it
+      if (pendingAnswerRef.current) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        const { questionId, answer, timeTaken } = pendingAnswerRef.current;
+        // Use fetch directly since we can't use async in cleanup
+        fetch(`/api/quiz/${quizToken}/answer`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questionId, answer, timeTaken }),
+        }).catch(console.error);
+      }
+    };
+  }, [quizToken]);
+
+  // Save answer to backend (without debouncing)
+  const saveAnswerToBackend = async (questionId: string, answer: number, timeTaken: number) => {
+    try {
+      const response = await fetch(`/api/quiz/${quizToken}/answer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          questionId,
+          answer,
+          timeTaken,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Failed to save answer:", data.error);
+      }
+    } catch (error) {
+      console.error("Error saving answer:", error);
+    }
+  };
+
   // Calculate time spent on question when leaving it
   const recordTimeForCurrentQuestion = () => {
     const questionId = currentQuestion?.id;
@@ -80,10 +126,26 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
     }
   };
 
-  const handleAnswerChange = async (value: string) => {
+  // Save pending answer immediately (called before navigation)
+  const savePendingAnswerImmediately = async () => {
+    if (pendingAnswerRef.current) {
+      // Clear debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+
+      // Save immediately
+      const { questionId, answer, timeTaken } = pendingAnswerRef.current;
+      await saveAnswerToBackend(questionId, answer, timeTaken);
+      pendingAnswerRef.current = null;
+    }
+  };
+
+  const handleAnswerChange = (value: string) => {
     const answerIndex = parseInt(value);
 
-    // Update local state immediately for UI responsiveness
+    // Update local state immediately for UI responsiveness (optimistic UI)
     setAnswers((prev) => ({
       ...prev,
       [currentQuestion.id]: answerIndex,
@@ -95,58 +157,53 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
       ? Math.floor((Date.now() - questionStartTimes[questionId]) / 1000)
       : 0;
 
-    // Save answer to database immediately
-    try {
-      setSavingAnswer(true);
-      const response = await fetch(`/api/quiz/${quizToken}/answer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          questionId: currentQuestion.id,
-          answer: answerIndex,
-          timeTaken,
-        }),
-      });
+    // Store pending answer
+    pendingAnswerRef.current = { questionId, answer: answerIndex, timeTaken };
 
-      if (!response.ok) {
-        const data = await response.json();
-        console.error("Failed to save answer:", data.error);
-        // Don't show error to user - answer is still in local state
-        // They can retry on submit
-      }
-    } catch (error) {
-      console.error("Error saving answer:", error);
-      // Don't show error to user - fail silently
-    } finally {
-      setSavingAnswer(false);
+    // Clear existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+
+    // Set new debounce timer (2000ms)
+    debounceTimerRef.current = setTimeout(() => {
+      saveAnswerToBackend(questionId, answerIndex, timeTaken);
+      pendingAnswerRef.current = null;
+      debounceTimerRef.current = null;
+    }, 2000);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Save pending answer immediately before navigation
+    await savePendingAnswerImmediately();
     recordTimeForCurrentQuestion();
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = async () => {
+    // Save pending answer immediately before navigation
+    await savePendingAnswerImmediately();
     recordTimeForCurrentQuestion();
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 
-  const handleQuestionNavigate = (index: number) => {
+  const handleQuestionNavigate = async (index: number) => {
+    // Save pending answer immediately before navigation
+    await savePendingAnswerImmediately();
     recordTimeForCurrentQuestion();
     setCurrentQuestionIndex(index);
   };
 
-  const handleSubmitClick = () => {
+  const handleSubmitClick = async () => {
     if (!allAnswered) {
       return;
     }
+    // Save pending answer immediately before showing dialog
+    await savePendingAnswerImmediately();
     recordTimeForCurrentQuestion();
     setShowSubmitDialog(true);
   };

@@ -1,17 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { SignInButtons } from "@/components/auth/sign-in-buttons";
 import {
   Brain,
   Zap,
-  Target,
-  ArrowRight,
-  Shield,
-  BarChart3,
-  Clock,
-  CheckCircle2
+  Target
 } from "lucide-react";
 
 export default function Home() {
@@ -33,30 +27,12 @@ export default function Home() {
     },
   ];
 
-  const benefits = [
-    {
-      icon: Shield,
-      title: "Anti-Cheat Protection",
-      description: "Fullscreen mode, tab detection, and proctoring ensure test integrity",
-    },
-    {
-      icon: BarChart3,
-      title: "Detailed Analytics",
-      description: "Compare candidates side-by-side with comprehensive scoring breakdowns",
-    },
-    {
-      icon: Clock,
-      title: "Time-Efficient",
-      description: "Reduce screening time by 80% while improving candidate quality",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="font-pacifico text-2xl text-gradient-primary">
+        <div className="max-w-6xl mx-auto px-6 py-2 flex items-center justify-between">
+          <Link href="/" className="font-pacifico text-3xl md:text-4xl text-gradient-primary leading-tight">
             Screenify
           </Link>
           <SignInButtons />
@@ -65,8 +41,10 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {/* Subtle background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-accent/[0.02]" />
+        {/* Layered background: grid + dots + glow */}
+        <div className="absolute inset-0 hero-grid" />
+        <div className="absolute inset-0 hero-dots" />
+        <div className="absolute inset-0 hero-glow" />
 
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-24">
           <div className="max-w-3xl mx-auto text-center space-y-8">
@@ -94,23 +72,12 @@ export default function Home() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <SignInButtons />
-            </div>
-
-            {/* Social proof */}
-            <div className="flex items-center justify-center gap-8 pt-8 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-success" />
-                <span>No credit card required</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-success" />
-                <span>Free for small teams</span>
-              </div>
+              <SignInButtons variant="cta" />
             </div>
           </div>
         </div>
       </section>
+
 
       {/* Features Section */}
       <section className="py-24 bg-muted/30">
@@ -145,65 +112,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it Works */}
-      <section className="py-24">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Simple, powerful workflow
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Get from job posting to qualified candidates in three easy steps.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { step: "01", title: "Upload JD", description: "Upload your job description PDF and we'll extract requirements automatically" },
-              { step: "02", title: "Add Candidates", description: "Upload resumes to generate unique quiz links with verification questions" },
-              { step: "03", title: "Review Results", description: "Compare candidates with detailed scores and anti-fraud indicators" },
-            ].map((item, index) => (
-              <div key={item.step} className="relative">
-                {index < 2 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-[2px] bg-gradient-to-r from-border to-transparent" />
-                )}
-                <div className="text-6xl font-bold text-primary/10 mb-4">
-                  {item.step}
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-muted-foreground">
-                  {item.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Grid */}
-      <section className="py-24 bg-muted/30">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-6">
-            {benefits.map((benefit) => (
-              <div
-                key={benefit.title}
-                className="p-6 rounded-2xl bg-card shadow-soft-sm border border-border/50"
-              >
-                <benefit.icon className="h-8 w-8 text-accent mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  {benefit.title}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {benefit.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-24">
         <div className="max-w-4xl mx-auto px-6 text-center">
@@ -213,9 +121,9 @@ export default function Home() {
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join hundreds of recruiters who have streamlined their screening process with Screenify.
           </p>
-          <SignInButtons />
         </div>
       </section>
+
 
       {/* Footer */}
       <footer className="py-8 border-t border-border">

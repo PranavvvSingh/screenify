@@ -14,7 +14,7 @@ import {
 	TableHeader,
 	TableRow
 } from "@/components/ui/table";
-import { Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
@@ -244,8 +244,9 @@ export default function CandidatesPage() {
 				</CardHeader>
 				<CardContent>
 					{loading ? (
-						<div className="text-center py-8 text-muted-foreground">
-							<p>Loading candidates...</p>
+						<div className="flex flex-col items-center justify-center py-16 space-y-4">
+							<Loader2 className="w-8 h-8 animate-spin text-primary" />
+							<p className="text-base font-medium text-foreground">Loading candidates...</p>
 						</div>
 					) : filteredCandidates.length === 0 ? (
 						<div className="text-center py-8 text-muted-foreground">

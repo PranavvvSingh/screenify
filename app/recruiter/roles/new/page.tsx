@@ -10,7 +10,7 @@ import { SkillsInput } from "@/components/skills-input";
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function NewRolePage() {
 	const router = useRouter();
@@ -176,7 +176,9 @@ export default function NewRolePage() {
 			{/* Header */}
 			<div className='flex items-center gap-4'>
 				<Link href='/recruiter'>
-					<Button variant='outline'>← Back</Button>
+					<Button variant='ghost' size='icon' className='h-10 w-10 rounded-xl hover:bg-muted'>
+						<ArrowLeft className='h-5 w-5' />
+					</Button>
 				</Link>
 				<div>
 					<h1 className='text-3xl font-bold text-foreground'>Create New Job Role</h1>

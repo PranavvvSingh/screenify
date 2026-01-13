@@ -159,4 +159,32 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+}
+
+/* Hero background styles - outside @layer for Tailwind v4 compatibility */
+.hero-grid {
+  --grid-color: rgba(196, 92, 59, 0.08);
+  --grid-size: 48px;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 85%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 85%);
+}
+
+.hero-dots {
+  --dot-color: rgba(212, 165, 116, 0.1);
+  --dot-size: 2px;
+  --grid-size: 48px;
+  background-image: radial-gradient(circle at center, var(--dot-color) var(--dot-size), transparent var(--dot-size));
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: calc(var(--grid-size) / 2) calc(var(--grid-size) / 2);
+  mask-image: linear-gradient(to bottom, black 0%, black 25%, transparent 80%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 25%, transparent 80%);
+}
+
+.hero-glow {
+  background: radial-gradient(ellipse 100% 80% at 50% 35%, rgba(212, 165, 116, 0.08) 0%, transparent 70%);
 }

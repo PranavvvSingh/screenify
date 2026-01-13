@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useParams, useRouter } from "next/navigation";
-import { CheckCircle2, XCircle, Clock, AlertTriangle, ArrowLeft, Monitor, Eye } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, XCircle, Clock, AlertTriangle, ArrowLeft, Monitor, Eye, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 type VerificationStatus = "VERIFIED" | "QUESTIONABLE" | "DISCREPANCY" | null;
@@ -183,8 +184,9 @@ export default function CandidateDetailPage() {
 	if (loading) {
 		return (
 			<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'>
-				<div className='text-center py-12'>
-					<p className='text-muted-foreground'>Loading candidate details...</p>
+				<div className='flex flex-col items-center justify-center min-h-[60vh] space-y-4'>
+					<Loader2 className='w-8 h-8 animate-spin text-primary' />
+					<p className='text-base font-medium text-foreground'>Loading candidate details...</p>
 				</div>
 			</div>
 		);
@@ -215,10 +217,11 @@ export default function CandidateDetailPage() {
 			{/* Header */}
 			<div className='flex items-center justify-between flex-wrap gap-4'>
 				<div className='flex items-center gap-4'>
-					<Button variant='outline' size='sm' onClick={() => router.push(`/recruiter/roles/${roleId}`)}>
-						<ArrowLeft className='w-4 h-4 mr-2' />
-						Back to Role
-					</Button>
+					<Link href={`/recruiter/roles/${roleId}`}>
+						<Button variant='ghost' size='icon' className='h-10 w-10 rounded-xl hover:bg-muted'>
+							<ArrowLeft className='h-5 w-5' />
+						</Button>
+					</Link>
 					<div>
 						<h1 className='text-3xl font-bold text-foreground'>{quiz.candidateName}</h1>
 						<p className='text-muted-foreground mt-1'>{quiz.role.title}</p>
@@ -229,6 +232,7 @@ export default function CandidateDetailPage() {
 						variant={quiz.candidateStatus === "SHORTLISTED" ? "default" : "outline"}
 						disabled={updatingStatus || quiz.candidateStatus === "SHORTLISTED"}
 						onClick={() => updateCandidateStatus("SHORTLISTED")}
+						className="border-green-600! text-green-600 hover:bg-transparent! hover:text-green-600!"
 					>
 						{quiz.candidateStatus === "SHORTLISTED" ? "✓ Shortlisted" : "Shortlist"}
 					</Button>
@@ -236,6 +240,7 @@ export default function CandidateDetailPage() {
 						variant={quiz.candidateStatus === "REJECTED" ? "destructive" : "outline"}
 						disabled={updatingStatus || quiz.candidateStatus === "REJECTED"}
 						onClick={() => updateCandidateStatus("REJECTED")}
+						className="border-red-600! text-red-600 hover:bg-transparent! hover:text-red-600!"
 					>
 						{quiz.candidateStatus === "REJECTED" ? "✗ Rejected" : "Reject"}
 					</Button>
@@ -276,9 +281,9 @@ export default function CandidateDetailPage() {
 									</div>
 									<div className='text-center p-4 bg-muted/50 rounded-lg'>
 										<p className='text-2xl font-bold'>
-											{formatTime(result.timeTakenSeconds)} / {quiz.duration} minutes
+											{formatTime(result.timeTakenSeconds)} <span className='text-gray-500'>out of</span> {quiz.duration} minutes
 										</p>
-										<p className='text-sm text-muted-foreground mt-1'>Time Taken / Duration</p>
+										<p className='text-sm text-muted-foreground mt-1'>Time Taken & Duration</p>
 									</div>
 
 									{result.skillBreakdown && Object.keys(result.skillBreakdown).length > 0 && (

@@ -14,7 +14,7 @@ export const auth = betterAuth({
 			clientId: process.env.GOOGLE_CLIENT_ID as string,
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
 			// Force account selection screen every time (helpful for debugging)
-			prompt: "select_account"
+			// prompt: "select_account"
 		}
 	},
 	advanced: {

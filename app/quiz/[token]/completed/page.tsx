@@ -79,7 +79,7 @@ export default function QuizCompletedPage() {
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
-            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
           </div>
         </nav>
         <div className="max-w-2xl mx-auto px-6 py-12 space-y-6">
@@ -103,7 +103,7 @@ export default function QuizCompletedPage() {
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
-            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
           </div>
         </nav>
         <div className="max-w-2xl mx-auto px-6 py-12">
@@ -129,7 +129,7 @@ export default function QuizCompletedPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
-          <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+          <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
         </div>
       </nav>
 

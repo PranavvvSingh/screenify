@@ -135,7 +135,15 @@ export async function getQuizForEvaluation(quizId: string) {
 export async function getQuizById(quizId: string) {
   return prisma.quiz.findUnique({
     where: { id: quizId },
-    include: {
+    select: {
+      id: true,
+      candidateName: true,
+      candidateEmail: true,
+      candidateStatus: true,
+      questions: true,
+      duration: true,
+      completed: true,
+      createdAt: true,
       jobRole: {
         select: {
           id: true,
@@ -144,8 +152,29 @@ export async function getQuizById(quizId: string) {
           recruiterId: true,
         },
       },
-      result: true,
+      result: {
+        select: {
+          standardScore: true,
+          standardCorrect: true,
+          standardTotal: true,
+          verificationStatus: true,
+          verificationCorrect: true,
+          verificationTotal: true,
+          skillBreakdown: true,
+          confidenceScore: true,
+          anomalyIndicators: true,
+          status: true,
+          startedAt: true,
+          submittedAt: true,
+          proctoringMetadata: true,
+        },
+      },
       answers: {
+        select: {
+          questionId: true,
+          answer: true,
+          timeTaken: true,
+        },
         orderBy: {
           submittedAt: "asc",
         },
@@ -167,48 +196,6 @@ export async function getQuizWithOwnership(quizId: string) {
         },
       },
     },
-  });
-}
-
-/**
- * Get all quizzes for a recruiter with filtering/sorting
- */
-export async function getQuizzesByRecruiter(
-  recruiterId: string,
-  options?: {
-    status?: string;
-    sortBy?: string;
-    sortOrder?: "asc" | "desc";
-  }
-) {
-  const { status, sortBy = "standardScore", sortOrder = "desc" } = options || {};
-
-  return prisma.quiz.findMany({
-    where: {
-      jobRole: {
-        recruiterId,
-      },
-      ...(status &&
-        status !== "ALL" && {
-          completed: status === "IN_PROGRESS" ? false : true,
-        }),
-    },
-    include: {
-      jobRole: {
-        select: {
-          id: true,
-          title: true,
-          description: true,
-        },
-      },
-      result: true,
-    },
-    orderBy:
-      sortBy === "candidateName"
-        ? { candidateName: sortOrder }
-        : sortBy === "submittedAt"
-          ? { createdAt: sortOrder }
-          : undefined,
   });
 }
 

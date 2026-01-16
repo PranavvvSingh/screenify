@@ -157,7 +157,7 @@ export default function QuizTakePage() {
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
             <Skeleton className="h-10 w-24 rounded-xl" />
           </div>
         </nav>
@@ -177,7 +177,7 @@ export default function QuizTakePage() {
         {/* Navbar */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
-            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
           </div>
         </nav>
         <main className="max-w-4xl mx-auto px-6 py-8">
@@ -202,7 +202,7 @@ export default function QuizTakePage() {
       <div className="min-h-screen bg-background">
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
-            <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+            <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
           </div>
         </nav>
         <main className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
@@ -222,7 +222,7 @@ export default function QuizTakePage() {
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="font-pacifico text-2xl text-gradient-primary">Screenify</span>
+          <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
           <Timer
             numOfQuestions={quizSession.questions.length}
             stopTimer={stopTimer}

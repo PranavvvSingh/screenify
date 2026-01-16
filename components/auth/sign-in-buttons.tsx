@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
+import { authClient, useSession } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";
 
 interface SignInButtonsProps {
@@ -9,17 +10,24 @@ interface SignInButtonsProps {
 }
 
 export function SignInButtons({ variant = "default" }: SignInButtonsProps) {
-  const handleGoogleSignIn = async () => {
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/api/auth-callback",
-    });
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleClick = async () => {
+    if (session?.user) {
+      router.push("/recruiter");
+    } else {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/api/auth-callback",
+      });
+    }
   };
 
   if (variant === "cta") {
     return (
       <button
-        onClick={handleGoogleSignIn}
+        onClick={handleClick}
         className="group relative px-6 py-2 rounded-xl border-2 border-primary bg-transparent text-primary font-semibold text-base tracking-wide cursor-pointer transition-all duration-200 hover:bg-primary hover:text-white hover:shadow-soft-md active:scale-[0.98]"
       >
         <span className="flex items-center gap-2">
@@ -39,7 +47,7 @@ export function SignInButtons({ variant = "default" }: SignInButtonsProps) {
 
   return (
     <Button
-      onClick={handleGoogleSignIn}
+      onClick={handleClick}
       variant="outline"
       size="default"
       className="text-base cursor-pointer"

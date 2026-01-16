@@ -40,7 +40,7 @@ export function Navbar({ children, quizMode = false }: NavbarProps) {
           {/* Left: Screenify Logo */}
           <Link
             href="/"
-            className="font-pacifico text-[26px] text-gradient-primary hover:scale-[1.02] transition-transform duration-150 ease-out select-none"
+            className="font-pacifico text-2xl text-gradient-primary select-none pb-1"
           >
             Screenify
           </Link>

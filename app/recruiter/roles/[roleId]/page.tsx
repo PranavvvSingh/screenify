@@ -5,13 +5,13 @@ import { AddCandidateModalWrapper } from "@/components/add-candidate-modal-wrapp
 import { CandidateList } from "@/components/candidate-list";
 import { JobDescriptionCollapsible } from "@/components/job-description-collapsible";
 import { Users, CheckCircle, BarChart3, ArrowLeft } from "lucide-react";
-import { getJobRoleWithQuizzes } from "@/lib/db";
+import { getJobRoleWithStats } from "@/lib/db";
 
 export default async function RoleDetailPage({ params }: { params: Promise<{ roleId: string }> }) {
   const { roleId } = await params;
 
   // Fetch role data from database
-  const role = await getJobRoleWithQuizzes(roleId);
+  const role = await getJobRoleWithStats(roleId);
 
   if (!role) {
     notFound();
@@ -27,14 +27,10 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
     experience?: { min_years?: number; max_years?: number };
   };
 
-  // Calculate statistics
-  const totalCandidates = role.quizzes.length;
-  const completedAssessments = role.quizzes.filter(q => q.completed).length;
-  const avgScore = completedAssessments > 0
-    ? role.quizzes
-        .filter(q => q.result?.standardScore)
-        .reduce((sum, q) => sum + (q.result?.standardScore || 0), 0) / completedAssessments
-    : null;
+  // Stats from query
+  const totalCandidates = role.totalCandidates;
+  const completedAssessments = role.completedAssessments;
+  const avgScore = role.avgScore;
 
   const requiredSkills = jdData.required_skills || [];
   const preferredSkills = jdData.preferred_skills || [];
@@ -118,7 +114,7 @@ export default async function RoleDetailPage({ params }: { params: Promise<{ rol
           <h2 className="text-xl font-semibold text-foreground">Candidates</h2>
           <p className="text-sm text-muted-foreground mt-1">All candidates for this role</p>
         </div>
-        <CandidateList quizzes={role.quizzes} roleId={roleId} />
+        <CandidateList roleId={roleId} initialTotal={totalCandidates} />
       </div>
     </div>
   );

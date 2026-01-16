@@ -57,25 +57,13 @@ export async function POST(
     // Extract resume profile using Ollama
     const resumeProfile = await extractResumeProfile(resumeText);
 
-    // Calculate question counts (70/30 split)
+    // Calculate question counts
     const totalQuestions = role.totalQuestions || 10;
     const standardCount = Math.round(totalQuestions * 0.7);
     const verificationCount = totalQuestions - standardCount;
 
-    // Get base questions (standard questions - 70%)
     const baseQuestions = (role.baseQuestions as unknown as Question[]) || [];
-
-    // Select the required number of standard questions
-    // If we have more than needed, randomly select
-    let standardQuestions: Question[];
-    if (baseQuestions.length >= standardCount) {
-      // Randomly select standardCount questions
-      const shuffled = [...baseQuestions].sort(() => Math.random() - 0.5);
-      standardQuestions = shuffled.slice(0, standardCount);
-    } else {
-      // Use all available questions (shouldn't happen if role was created properly)
-      standardQuestions = baseQuestions;
-    }
+    const standardQuestions = baseQuestions.slice(0, standardCount);
 
     // Generate verification questions (30%) from resume
     const verificationQuestions = await generateVerificationQuestions(
@@ -84,14 +72,10 @@ export async function POST(
     );
     console.log("Verification questions generated");
 
-    // Combine and shuffle questions
     const { allQuestions } = generateQuiz({
       standardQuestions,
       verificationQuestions,
     });
-
-    // Calculate duration (1 minutes per question)
-    const duration = totalQuestions * 1;
 
     // Create quiz record
     const quiz = await insertQuiz({
@@ -99,7 +83,7 @@ export async function POST(
       candidateName,
       candidateEmail,
       questions: allQuestions as unknown as Prisma.InputJsonValue[],
-      duration,
+      duration: totalQuestions * 1, // total minutes
     });
     console.log("Quiz created with ID:", quiz.id);
 

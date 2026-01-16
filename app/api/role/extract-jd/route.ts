@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
     // Call Ollama API to extract structured requirements
     const requirements = await extractJDRequirements(text);
     console.log("Successfully extracted requirements");
-    console.log(JSON.stringify(requirements, null, 2));
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
+import fs from "fs";
+import path from "path";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -11,7 +13,8 @@ const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({
   connectionString,
   ssl: {
-    rejectUnauthorized: false, // Accept self-signed certificates (for Aiven and similar services)
+    rejectUnauthorized: true,
+    ca: fs.readFileSync(path.join(process.cwd(), "certs/ca.pem")).toString(),
   },
 });
 const adapter = new PrismaPg(pool);

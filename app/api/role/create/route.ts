@@ -6,8 +6,6 @@ import type { JDRequirements } from "@/types/ollama";
 import type { Prisma } from "@prisma/client";
 
 interface CreateRoleRequest {
-  title: string;
-  description: string;
   requirements: JDRequirements;
   totalQuestions: number;
 }
@@ -19,7 +17,11 @@ export async function POST(request: NextRequest) {
 
     // 2. Parse and validate request body
     const body: CreateRoleRequest = await request.json();
-    const { title, description, requirements, totalQuestions } = body;
+    const { requirements, totalQuestions } = body;
+
+    // Extract title and description from requirements
+    const title = requirements?.job_title;
+    const description = requirements?.description;
 
     if (!title || !title.trim()) {
       return NextResponse.json(
@@ -65,6 +67,16 @@ export async function POST(request: NextRequest) {
         standardQuestionsCount
       );
       console.log(`Successfully generated ${baseQuestions.length} base questions`);
+
+      // Validate that we got enough questions
+      if (baseQuestions.length < standardQuestionsCount) {
+        return NextResponse.json(
+          {
+            error: `Failed to generate enough questions. Expected ${standardQuestionsCount}, got ${baseQuestions.length}. Please try again.`,
+          },
+          { status: 500 }
+        );
+      }
     } catch (error) {
       console.error("Error generating base questions:", error);
       return NextResponse.json(
@@ -77,11 +89,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Save role to database
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { description: _, ...jdWithoutDescription } = requirements;
     const role = await insertJobRole({
       title: title.trim(),
       description: description.trim(),
       recruiterId: recruiter.id,
-      jd: requirements as unknown as Prisma.InputJsonValue,
+      jd: jdWithoutDescription as unknown as Prisma.InputJsonValue,
       baseQuestions: baseQuestions as unknown as Prisma.InputJsonValue,
       totalQuestions: totalQuestions,
     });

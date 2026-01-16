@@ -120,8 +120,6 @@ export default function NewRolePage() {
 
 		try {
 			const roleData = {
-				title,
-				description,
 				totalQuestions,
 				requirements: {
 					job_title: title,

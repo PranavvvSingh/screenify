@@ -39,19 +39,19 @@ interface AnomalyIndicator {
 }
 
 interface QuizResult {
-	standardScore: number;
+	standardScore: number | null;
 	standardCorrect: number;
 	standardTotal: number;
 	verificationStatus: VerificationStatus;
 	verificationCorrect: number;
 	verificationTotal: number;
 	skillBreakdown: Record<string, number> | null;
-	confidenceScore: number;
+	confidenceScore: number | null;
 	anomalyIndicators: AnomalyIndicator[];
 	status: QuizStatus;
 	startedAt: string;
-	submittedAt: string;
-	timeTakenSeconds: number;
+	submittedAt: string | null;
+	timeTakenSeconds: number | null;
 }
 
 interface QuizDetails {
@@ -225,22 +225,67 @@ export default function CandidateDetailPage() {
 						<h1 className='text-3xl font-bold text-foreground'>{quiz.candidateName}</h1>
 					</div>
 				</div>
-				<div className='flex gap-2'>
+				<div className='flex gap-3'>
 					<Button
-						variant={quiz.candidateStatus === "SHORTLISTED" ? "default" : "outline"}
+						variant="outline"
 						disabled={updatingStatus || quiz.candidateStatus === "SHORTLISTED"}
 						onClick={() => updateCandidateStatus("SHORTLISTED")}
-						className="border-green-600! text-green-600 hover:bg-transparent! hover:text-green-600!"
+						className={`
+							px-5 py-2.5 min-w-[130px]
+							border-2 rounded-lg
+							font-medium
+							transition-all duration-300 ease-out
+							${quiz.candidateStatus === "SHORTLISTED"
+								? 'border-emerald-500/40 bg-gradient-to-br from-emerald-50 via-emerald-50/80 to-teal-50/60 text-emerald-700'
+								: 'border-emerald-200 text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50/50'
+							}
+							disabled:opacity-60 disabled:cursor-not-allowed
+						`}
 					>
-						{quiz.candidateStatus === "SHORTLISTED" ? "✓ Shortlisted" : "Shortlist"}
+						<span className="inline-flex items-center gap-2">
+							{quiz.candidateStatus === "SHORTLISTED" && (
+								<svg
+									className="w-4 h-4"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+								</svg>
+							)}
+							{quiz.candidateStatus === "SHORTLISTED" ? "Shortlisted" : "Shortlist"}
+						</span>
 					</Button>
+
 					<Button
-						variant={quiz.candidateStatus === "REJECTED" ? "destructive" : "outline"}
+						variant="outline"
 						disabled={updatingStatus || quiz.candidateStatus === "REJECTED"}
 						onClick={() => updateCandidateStatus("REJECTED")}
-						className="border-red-600! text-red-600 hover:bg-transparent! hover:text-red-600!"
+						className={`
+							px-5 py-2.5 min-w-[130px]
+							border-2 rounded-lg
+							font-medium
+							transition-all duration-300 ease-out
+							${quiz.candidateStatus === "REJECTED"
+								? 'border-rose-500/40 bg-gradient-to-br from-rose-50 via-rose-50/80 to-red-50/60 text-rose-700'
+								: 'border-rose-200 text-rose-600 hover:border-rose-400 hover:bg-rose-50/50'
+							}
+							disabled:opacity-60 disabled:cursor-not-allowed
+						`}
 					>
-						{quiz.candidateStatus === "REJECTED" ? "✗ Rejected" : "Reject"}
+						<span className="inline-flex items-center gap-2">
+							{quiz.candidateStatus === "REJECTED" && (
+								<svg
+									className="w-4 h-4"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+								</svg>
+							)}
+							{quiz.candidateStatus === "REJECTED" ? "Rejected" : "Reject"}
+						</span>
 					</Button>
 				</div>
 			</div>
@@ -257,7 +302,7 @@ export default function CandidateDetailPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							{hasResult && result ? (
+							{hasResult && result && result.standardScore !== null ? (
 								<div className='space-y-6'>
 									<div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
 										<div className='text-center p-4 bg-muted/50 rounded-lg'>
@@ -277,12 +322,14 @@ export default function CandidateDetailPage() {
 											<p className='text-sm text-muted-foreground mt-1'>Verification Q&apos;s</p>
 										</div>
 									</div>
+									{result.timeTakenSeconds !== null && (
 									<div className='text-center p-4 bg-muted/50 rounded-lg'>
 										<p className='text-2xl font-bold'>
 											{formatTime(result.timeTakenSeconds)} <span className='text-gray-500'>out of</span> {quiz.duration} minutes
 										</p>
 										<p className='text-sm text-muted-foreground mt-1'>Time Taken & Duration</p>
 									</div>
+								)}
 
 									{result.skillBreakdown && Object.keys(result.skillBreakdown).length > 0 && (
 										<>
@@ -333,11 +380,14 @@ export default function CandidateDetailPage() {
 							<CardContent>
 								<div className='space-y-4'>
 									{quiz.standardDetails.map((detail, index) => {
-										const isAnswerCorrect = detail.candidateAnswer === detail.correctAnswer;
+										const isUnattempted = detail.candidateAnswer === null;
+										const isAnswerCorrect = !isUnattempted && detail.candidateAnswer === detail.correctAnswer;
 										return (
 											<div key={detail.questionId} className='p-4 rounded-lg border bg-card'>
 												<div className='flex items-start gap-3 mb-3'>
-													{isAnswerCorrect ? (
+													{isUnattempted ? (
+														<Clock className='w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5' />
+													) : isAnswerCorrect ? (
 														<CheckCircle2 className='w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5' />
 													) : (
 														<XCircle className='w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
@@ -409,11 +459,14 @@ export default function CandidateDetailPage() {
 							<CardContent>
 								<div className='space-y-4'>
 									{quiz.verificationDetails.map((detail, index) => {
-										const isAnswerCorrect = detail.candidateAnswer === detail.correctAnswer;
+										const isUnattempted = detail.candidateAnswer === null;
+										const isAnswerCorrect = !isUnattempted && detail.candidateAnswer === detail.correctAnswer;
 										return (
 											<div key={detail.questionId} className='p-4 rounded-lg border bg-card'>
 												<div className='flex items-start gap-3 mb-3'>
-													{isAnswerCorrect ? (
+													{isUnattempted ? (
+														<Clock className='w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5' />
+													) : isAnswerCorrect ? (
 														<CheckCircle2 className='w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5' />
 													) : (
 														<XCircle className='w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
@@ -501,7 +554,7 @@ export default function CandidateDetailPage() {
 						</CardHeader>
 						<CardContent>
 							<div className='text-center'>
-								{hasResult && result ? (
+								{hasResult && result && result.confidenceScore !== null ? (
 									<>
 										<p className='text-5xl font-bold text-primary mb-2'>{result.confidenceScore.toFixed(0)}%</p>
 										<p className='text-sm text-muted-foreground'>Based on proctoring events</p>

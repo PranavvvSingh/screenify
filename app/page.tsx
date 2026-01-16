@@ -31,8 +31,8 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-2 flex items-center justify-between">
-          <Link href="/" className="font-pacifico text-3xl md:text-4xl text-gradient-primary leading-tight">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="font-pacifico text-2xl text-gradient-primary pb-1">
             Screenify
           </Link>
           <SignInButtons />
@@ -128,7 +128,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 border-t border-border">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <span className="font-pacifico text-xl text-primary">Screenify</span>
+          <span className="font-pacifico text-xl text-primary pb-1">Screenify</span>
           <span className="text-sm text-muted-foreground">
             AI-Powered Candidate Screening
           </span>

@@ -8,7 +8,6 @@ export {
   getQuizForEvaluation,
   getQuizById,
   getQuizWithOwnership,
-  getQuizzesByRecruiter,
   getQuizByCandidate,
   insertQuiz,
   updateQuizCompleted,
@@ -25,9 +24,14 @@ export {
 // JobRole queries
 export {
   getJobRoleById,
-  getJobRoleWithQuizzes,
+  getJobRoleWithStats,
+  getQuizzesByRole,
   getJobRolesWithQuizzes,
+  getJobRolesPaginated,
+  getDashboardStats,
   insertJobRole,
+  type QuizFilters,
+  type RoleFilters,
 } from "./job-role.queries";
 
 // Recruiter queries

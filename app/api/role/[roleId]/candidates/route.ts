@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getQuizzesByRole, type QuizFilters } from "@/lib/db";
+import { getStandardScore, getVerificationStatus } from "@/lib/quiz-helpers";
 
 export async function GET(
 	request: NextRequest,
@@ -68,11 +69,48 @@ export async function GET(
 
 		const result = await getQuizzesByRole(roleId, page, filters);
 
+		// Transform data to match frontend expected format
+		const quizzes = result.data.map((quiz) => {
+			// Compute standardScore and verificationStatus from raw counts
+			const standardScore = quiz.result
+				? getStandardScore(quiz.result.standardCorrect, quiz.result.standardTotal)
+				: null;
+
+			const computedVerificationStatus = quiz.result
+				? getVerificationStatus(quiz.result.verificationCorrect, quiz.result.verificationTotal)
+				: null;
+
+			return {
+				id: quiz.id,
+				candidateName: quiz.candidateName,
+				candidateEmail: quiz.candidateEmail,
+				candidateStatus: quiz.candidateStatus,
+				token: quiz.token,
+				status: quiz.status,
+				createdAt: quiz.createdAt,
+				result: quiz.result
+					? {
+							standardScore,
+							verificationStatus: computedVerificationStatus,
+							submittedAt: quiz.endedAt,
+						}
+					: null,
+			};
+		});
+
+		// Post-filter by verificationStatus if specified (since it's computed)
+		let filteredQuizzes = quizzes;
+		if (filters.verificationStatus) {
+			filteredQuizzes = quizzes.filter(
+				(q) => q.result?.verificationStatus === filters.verificationStatus
+			);
+		}
+
 		return NextResponse.json({
-			quizzes: result.data,
+			quizzes: filteredQuizzes,
 			pagination: {
 				page: result.page,
-				total: result.total,
+				total: filters.verificationStatus ? filteredQuizzes.length : result.total,
 				totalPages: result.totalPages
 			}
 		});

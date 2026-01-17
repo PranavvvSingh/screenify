@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getQuizByToken } from "@/lib/db";
+import { getEffectiveQuizStatus } from "@/lib/quiz-helpers";
 
 /**
  * GET /api/quiz/[token]
@@ -32,15 +33,33 @@ export async function GET(
       );
     }
 
-    // Check if quiz is already completed
-    if (quiz.completed) {
+    // Get effective status (includes computed EXPIRED state)
+    const effectiveStatus = getEffectiveQuizStatus({
+      status: quiz.status,
+      expiresAt: quiz.expiresAt,
+      startedAt: quiz.startedAt,
+      duration: quiz.duration,
+    });
+
+    // Check if quiz is already completed or expired
+    if (effectiveStatus === "SUBMITTED" || effectiveStatus === "TERMINATED") {
       return NextResponse.json(
         {
           error: "Quiz already completed",
           completed: true,
-          submittedAt: quiz.result?.submittedAt,
+          endedAt: quiz.endedAt,
         },
         { status: 410 } // 410 Gone - resource no longer available
+      );
+    }
+
+    if (effectiveStatus === "EXPIRED") {
+      return NextResponse.json(
+        {
+          error: "Quiz link has expired",
+          expired: true,
+        },
+        { status: 410 }
       );
     }
 
@@ -48,8 +67,8 @@ export async function GET(
     const questions = quiz.questions as Array<{ id: string; question: string }>;
     const questionCount = questions?.length || 0;
 
-    // Calculate estimated time (duration is in minutes)
-    const estimatedTimeMinutes = quiz.duration;
+    // Duration is stored in seconds, convert to minutes for display
+    const estimatedTimeMinutes = Math.ceil(quiz.duration / 60);
 
     // Extract skills from JD
     const jd = quiz.jobRole.jd as { required_skills?: string[]; preferred_skills?: string[] };
@@ -62,6 +81,7 @@ export async function GET(
       quiz: {
         id: quiz.id,
         candidateName: quiz.candidateName,
+        status: effectiveStatus,
         role: {
           title: quiz.jobRole.title,
           description: quiz.jobRole.description,

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getQuizForStart, insertQuizResult, getQuizResultByQuizId } from "@/lib/db";
+import { getQuizForStart, startQuiz } from "@/lib/db";
+import { getEffectiveQuizStatus, getRemainingTime } from "@/lib/quiz-helpers";
 
 /**
  * POST /api/quiz/[token]/start
  * Initialize quiz session and return quiz questions
- * Creates QuizResult record with startedAt timestamp
+ * Updates Quiz status to IN_PROGRESS and sets startedAt timestamp
  * No authentication required - public endpoint
  */
 export async function POST(
@@ -33,55 +34,64 @@ export async function POST(
       );
     }
 
+    // Get effective status (includes computed EXPIRED state)
+    const effectiveStatus = getEffectiveQuizStatus({
+      status: quiz.status,
+      expiresAt: quiz.expiresAt,
+      startedAt: quiz.startedAt,
+      duration: quiz.duration,
+    });
+
     // Check if quiz is already completed
-    if (quiz.completed) {
+    if (effectiveStatus === "SUBMITTED" || effectiveStatus === "TERMINATED") {
       return NextResponse.json(
         { error: "Quiz already completed" },
         { status: 410 }
       );
     }
 
-    // Check if quiz has already been started
-    if (quiz.result) {
-      // Quiz already started, return existing session
+    // Check if quiz link has expired before starting
+    if (effectiveStatus === "EXPIRED") {
+      return NextResponse.json(
+        { error: "Quiz link has expired" },
+        { status: 410 }
+      );
+    }
+
+    // Check if quiz has already been started (IN_PROGRESS)
+    if (quiz.status === "IN_PROGRESS" && quiz.startedAt) {
+      // Quiz already started, return existing session with remaining time
+      const remainingTime = getRemainingTime({
+        status: quiz.status,
+        startedAt: quiz.startedAt,
+        duration: quiz.duration,
+      });
+
       return NextResponse.json({
         success: true,
         quizId: quiz.id,
-        resultId: quiz.result.id,
         questions: quiz.questions,
         duration: quiz.duration,
-        startedAt: quiz.result.startedAt,
+        startedAt: quiz.startedAt,
+        remainingTime,
+        version: quiz.version,
         alreadyStarted: true,
       });
     }
 
-    // Create or get existing QuizResult to mark quiz as started
-    // Handle race conditions by catching unique constraint violations
-    let quizResult;
-    try {
-      quizResult = await insertQuizResult(quiz.id);
-    } catch (error: unknown) {
-      // If unique constraint failed, fetch the existing result
-      if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
-        quizResult = await getQuizResultByQuizId(quiz.id);
-
-        if (!quizResult) {
-          throw new Error("Failed to create or retrieve quiz result");
-        }
-      } else {
-        throw error;
-      }
-    }
+    // Start the quiz - update status to IN_PROGRESS
+    const updatedQuiz = await startQuiz(quiz.id);
 
     // Return quiz data with questions
     // Note: Questions are shuffled during quiz creation, so we return them as-is
     return NextResponse.json({
       success: true,
       quizId: quiz.id,
-      resultId: quizResult.id,
       questions: quiz.questions,
       duration: quiz.duration,
-      startedAt: quizResult.startedAt,
+      startedAt: updatedQuiz.startedAt,
+      remainingTime: quiz.duration, // Full duration since just started
+      version: updatedQuiz.version,
       alreadyStarted: false,
     });
   } catch (error) {

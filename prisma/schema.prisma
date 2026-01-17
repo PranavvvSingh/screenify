@@ -116,12 +116,21 @@ model Quiz {
   jobRoleId       String
   candidateName   String
   candidateEmail  String
-  token           String          @unique @default(cuid()) // Unique link for candidate access (no auth)
-  questions       Json // JSONB: [{ id, type: 'STANDARD' | 'RESUME_VERIFICATION', question, options: [], correctAnswer, skill }]
-  duration        Int             @default(20) // Duration in minutes
-  completed       Boolean         @default(false)
-  candidateStatus CandidateStatus @default(PENDING) // Recruiter decision
+  token           String          @unique @default(cuid()) // 
+  questions       Json // JSONB: [{ id, type: 'STANDARD' | 'RESUME_VERIFICATION', question, options: [], correctAnswer }]
+  duration        Int             @default(1200) // Duration in seconds (default 20 minutes)
+  candidateStatus CandidateStatus @default(PENDING) // Accept/Reject
   createdAt       DateTime        @default(now())
+
+  status             QuizStatus       @default(PENDING)
+  expiresAt          DateTime?
+  startedAt          DateTime?
+  endedAt            DateTime?
+
+  proctoringStatus   ProctoringStatus @default(CLEAN)
+  proctoringMetadata Json? // JSONB: { tabSwitches, fullscreenExits, events: [...] }
+
+  version Int @default(0) // Optimistic locking for answer submission race conditions
 
   jobRole JobRole      @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
   answers QuizAnswer[]
@@ -131,6 +140,7 @@ model Quiz {
   @@index([token])
   @@index([candidateEmail])
   @@index([candidateStatus])
+  @@index([status])
   @@map("quizzes")
 }
 
@@ -151,49 +161,32 @@ model QuizAnswer {
 }
 
 model QuizResult {
-  id          String    @id @default(cuid())
-  quizId      String    @unique // One result per quiz
-  startedAt   DateTime  @default(now())
-  submittedAt DateTime?
+  id     String @id @default(cuid())
+  quizId String @unique // One result per quiz
 
-  // Part 1: Standard Questions Score (70%) - Used for ranking
-  standardScore   Float? // Percentage: 0-100 from standard questions only
-  standardCorrect Int? // Number of correct standard answers
-  standardTotal   Int? // Total standard questions
+  standardCorrect Int
+  standardTotal   Int
 
-  // Part 2: Verification Status (30%) - Fraud detection (not scored)
-  verificationStatus  VerificationStatus? // VERIFIED, QUESTIONABLE, or DISCREPANCY
-  verificationCorrect Int? // Number of correct verification answers
-  verificationTotal   Int? // Total verification questions
-  verificationResults Json? // JSONB: [{ claim, question, correct }]
-
-  // Other metrics
-  skillBreakdown     Json? // JSONB: { React: 85, Node: 70 } - from standard questions only
-  confidenceScore    Float? // 0-100 based on proctoring flags
-  anomalyIndicators  Json? // JSONB: [{ type, severity, details }]
-  status             QuizResultStatus @default(IN_PROGRESS)
-  proctoringMetadata Json? // JSONB: { tabSwitches: 3, fullscreenExits: 1, events: [...] }
+  verificationCorrect Int
+  verificationTotal   Int
 
   quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
-  @@index([status])
-  @@index([standardScore])
-  @@index([verificationStatus])
   @@map("quiz_results")
 }
 
-enum VerificationStatus {
-  VERIFIED // ≥80% verification questions correct
-  QUESTIONABLE // 50-79% correct
-  DISCREPANCY // <50% correct
+enum QuizStatus {
+  PENDING     // Link created, not started
+  IN_PROGRESS // Candidate taking quiz
+  SUBMITTED   // Normal submission
+  TERMINATED  // Ended due to cheating
+  // Note: EXPIRED is computed at runtime from expiresAt/startedAt+duration
 }
 
-enum QuizResultStatus {
-  IN_PROGRESS
-  SUBMITTED
-  EVALUATED
-  EXPIRED
-  ENDED // Quiz ended due to cheating detection
+enum ProctoringStatus {
+  CLEAN      // No violations
+  SUSPICIOUS // Some violations detected
+  FLAGGED    // Excessive violations
 }
 
 enum CandidateStatus {

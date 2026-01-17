@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, ProctoringStatus } from "@prisma/client";
 
 // QUIZ QUERIES
 
@@ -14,7 +14,10 @@ export async function getQuizByToken(token: string) {
       candidateName: true,
       candidateEmail: true,
       duration: true,
-      completed: true,
+      status: true,
+      expiresAt: true,
+      startedAt: true,
+      endedAt: true,
       createdAt: true,
       questions: true,
       jobRole: {
@@ -28,8 +31,6 @@ export async function getQuizByToken(token: string) {
       result: {
         select: {
           id: true,
-          status: true,
-          submittedAt: true,
         },
       },
     },
@@ -47,8 +48,11 @@ export async function getQuizForStart(token: string) {
       candidateName: true,
       candidateEmail: true,
       duration: true,
-      completed: true,
+      status: true,
+      expiresAt: true,
+      startedAt: true,
       questions: true,
+      version: true,
       jobRole: {
         select: {
           title: true,
@@ -57,8 +61,6 @@ export async function getQuizForStart(token: string) {
       result: {
         select: {
           id: true,
-          status: true,
-          startedAt: true,
         },
       },
     },
@@ -73,7 +75,10 @@ export async function getQuizForAnswer(token: string) {
     where: { token },
     select: {
       id: true,
-      completed: true,
+      status: true,
+      startedAt: true,
+      duration: true,
+      version: true,
       questions: true,
     },
   });
@@ -87,7 +92,10 @@ export async function getQuizForSubmit(token: string) {
     where: { token },
     select: {
       id: true,
-      completed: true,
+      status: true,
+      startedAt: true,
+      duration: true,
+      version: true,
       questions: true,
       answers: {
         select: {
@@ -101,7 +109,6 @@ export async function getQuizForSubmit(token: string) {
       result: {
         select: {
           id: true,
-          status: true,
         },
       },
     },
@@ -142,7 +149,12 @@ export async function getQuizById(quizId: string) {
       candidateStatus: true,
       questions: true,
       duration: true,
-      completed: true,
+      status: true,
+      startedAt: true,
+      endedAt: true,
+      expiresAt: true,
+      proctoringStatus: true,
+      proctoringMetadata: true,
       createdAt: true,
       jobRole: {
         select: {
@@ -154,19 +166,11 @@ export async function getQuizById(quizId: string) {
       },
       result: {
         select: {
-          standardScore: true,
+          id: true,
           standardCorrect: true,
           standardTotal: true,
-          verificationStatus: true,
           verificationCorrect: true,
           verificationTotal: true,
-          skillBreakdown: true,
-          confidenceScore: true,
-          anomalyIndicators: true,
-          status: true,
-          startedAt: true,
-          submittedAt: true,
-          proctoringMetadata: true,
         },
       },
       answers: {
@@ -220,23 +224,63 @@ export async function insertQuiz(data: {
   candidateEmail: string;
   questions: Prisma.InputJsonValue[];
   duration: number;
+  expiresAt?: Date;
 }) {
   return prisma.quiz.create({
     data: {
-      ...data,
-      completed: false,
+      jobRoleId: data.jobRoleId,
+      candidateName: data.candidateName,
+      candidateEmail: data.candidateEmail,
+      questions: data.questions,
+      duration: data.duration,
+      expiresAt: data.expiresAt,
+      status: "PENDING",
     },
   });
 }
 
 /**
- * Mark quiz as completed
+ * Start a quiz - update status to IN_PROGRESS and set startedAt
  */
-export async function updateQuizCompleted(quizId: string) {
+export async function startQuiz(quizId: string) {
   return prisma.quiz.update({
     where: { id: quizId },
     data: {
-      completed: true,
+      status: "IN_PROGRESS",
+      startedAt: new Date(),
+    },
+  });
+}
+
+/**
+ * Submit a quiz - update status to SUBMITTED and set endedAt
+ * Uses optimistic locking with version check
+ */
+export async function submitQuiz(quizId: string, currentVersion: number) {
+  return prisma.quiz.updateMany({
+    where: {
+      id: quizId,
+      status: "IN_PROGRESS",
+      version: currentVersion
+    },
+    data: {
+      status: "SUBMITTED",
+      endedAt: new Date(),
+      version: { increment: 1 },
+    },
+  });
+}
+
+/**
+ * Terminate a quiz due to proctoring violations
+ */
+export async function terminateQuiz(quizId: string, proctoringStatus: ProctoringStatus) {
+  return prisma.quiz.update({
+    where: { id: quizId },
+    data: {
+      status: "TERMINATED",
+      endedAt: new Date(),
+      proctoringStatus,
     },
   });
 }
@@ -259,14 +303,17 @@ export async function updateQuizCandidateStatus(
 // QUIZ RESULT QUERIES
 
 /**
- * Create quiz result when quiz starts
+ * Create quiz result with initial values (all zeros)
+ * Called when quiz is submitted, before evaluation
  */
 export async function insertQuizResult(quizId: string) {
   return prisma.quizResult.create({
     data: {
       quizId,
-      status: "IN_PROGRESS",
-      startedAt: new Date(),
+      standardCorrect: 0,
+      standardTotal: 0,
+      verificationCorrect: 0,
+      verificationTotal: 0,
     },
   });
 }
@@ -281,42 +328,20 @@ export async function getQuizResultByQuizId(quizId: string) {
 }
 
 /**
- * Update quiz result on submission
- */
-export async function updateQuizResultSubmitted(resultId: string) {
-  return prisma.quizResult.update({
-    where: { id: resultId },
-    data: {
-      submittedAt: new Date(),
-      status: "SUBMITTED",
-      proctoringMetadata: {},
-      confidenceScore: 100,
-      anomalyIndicators: [],
-    },
-  });
-}
-
-/**
  * Update quiz result with evaluation scores
  */
 export async function updateQuizResultEvaluated(
   resultId: string,
   data: {
-    standardScore: number;
     standardCorrect: number;
     standardTotal: number;
-    verificationStatus: "VERIFIED" | "QUESTIONABLE" | "DISCREPANCY" | null;
     verificationCorrect: number;
     verificationTotal: number;
-    skillBreakdown: Record<string, number>;
   }
 ) {
   return prisma.quizResult.update({
     where: { id: resultId },
-    data: {
-      ...data,
-      status: "EVALUATED",
-    },
+    data,
   });
 }
 
@@ -325,7 +350,73 @@ export async function updateQuizResultEvaluated(
 // ============================================================================
 
 /**
- * Upsert (insert or update) a quiz answer
+ * Upsert (insert or update) a quiz answer with optimistic locking
+ * Uses a transaction to increment quiz version and upsert the answer atomically
+ * Returns null if version mismatch (quiz already ended)
+ */
+export async function upsertQuizAnswerWithLock(data: {
+  quizId: string;
+  questionId: string;
+  answer: string;
+  isCorrect: boolean;
+  timeTaken: number;
+  currentVersion: number;
+}) {
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // First, try to increment version (fails if version doesn't match or quiz not IN_PROGRESS)
+      const updateResult = await tx.quiz.updateMany({
+        where: {
+          id: data.quizId,
+          status: "IN_PROGRESS",
+          version: data.currentVersion,
+        },
+        data: {
+          version: { increment: 1 },
+        },
+      });
+
+      // If no rows updated, version mismatch or quiz ended
+      if (updateResult.count === 0) {
+        return null;
+      }
+
+      // Version matched, upsert the answer
+      const answer = await tx.quizAnswer.upsert({
+        where: {
+          quizId_questionId: {
+            quizId: data.quizId,
+            questionId: data.questionId,
+          },
+        },
+        update: {
+          answer: data.answer,
+          isCorrect: data.isCorrect,
+          timeTaken: data.timeTaken,
+          submittedAt: new Date(),
+        },
+        create: {
+          quizId: data.quizId,
+          questionId: data.questionId,
+          answer: data.answer,
+          isCorrect: data.isCorrect,
+          timeTaken: data.timeTaken,
+          submittedAt: new Date(),
+        },
+      });
+
+      return { answer, newVersion: data.currentVersion + 1 };
+    });
+
+    return result;
+  } catch {
+    // Transaction failed
+    return null;
+  }
+}
+
+/**
+ * Simple upsert without locking (for backward compatibility or testing)
  */
 export async function upsertQuizAnswer(data: {
   quizId: string;
@@ -354,6 +445,23 @@ export async function upsertQuizAnswer(data: {
       isCorrect: data.isCorrect,
       timeTaken: data.timeTaken,
       submittedAt: new Date(),
+    },
+  });
+}
+
+/**
+ * Update proctoring metadata for a quiz
+ */
+export async function updateQuizProctoringMetadata(
+  quizId: string,
+  metadata: Prisma.InputJsonValue,
+  proctoringStatus: ProctoringStatus
+) {
+  return prisma.quiz.update({
+    where: { id: quizId },
+    data: {
+      proctoringMetadata: metadata,
+      proctoringStatus,
     },
   });
 }

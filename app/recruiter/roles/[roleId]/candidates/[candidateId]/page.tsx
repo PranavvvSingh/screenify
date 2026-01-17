@@ -11,7 +11,7 @@ import { CheckCircle2, XCircle, Clock, AlertTriangle, ArrowLeft, Monitor, Eye, L
 import { formatDistanceToNow } from "date-fns";
 
 type VerificationStatus = "VERIFIED" | "QUESTIONABLE" | "DISCREPANCY" | null;
-type QuizStatus = "IN_PROGRESS" | "SUBMITTED" | "EVALUATED" | "EXPIRED" | "ENDED";
+type QuizStatus = "PENDING" | "IN_PROGRESS" | "SUBMITTED" | "TERMINATED" | "EXPIRED";
 type CandidateStatus = "PENDING" | "SHORTLISTED" | "REJECTED";
 
 interface QuestionDetail {
@@ -32,12 +32,6 @@ interface ProctoringEvent {
 	details?: string;
 }
 
-interface AnomalyIndicator {
-	type: string;
-	severity: string;
-	details: string;
-}
-
 interface QuizResult {
 	standardScore: number | null;
 	standardCorrect: number;
@@ -45,12 +39,6 @@ interface QuizResult {
 	verificationStatus: VerificationStatus;
 	verificationCorrect: number;
 	verificationTotal: number;
-	skillBreakdown: Record<string, number> | null;
-	confidenceScore: number | null;
-	anomalyIndicators: AnomalyIndicator[];
-	status: QuizStatus;
-	startedAt: string;
-	submittedAt: string | null;
 	timeTakenSeconds: number | null;
 }
 
@@ -65,8 +53,10 @@ interface QuizDetails {
 		description: string;
 	};
 	duration: number;
-	completed: boolean;
+	status: QuizStatus;
 	createdAt: string;
+	startedAt: string | null;
+	endedAt: string | null;
 	result: QuizResult | null;
 	standardDetails: QuestionDetail[];
 	verificationDetails: VerificationDetail[];
@@ -642,8 +632,14 @@ export default function CandidateDetailPage() {
 							</div>
 							<div className='flex justify-between'>
 								<span className='text-muted-foreground'>Status</span>
-								<Badge variant={quiz.completed ? "default" : "secondary"}>
-									{quiz.completed ? "Completed" : "Pending"}
+								<Badge variant={quiz.status === "SUBMITTED" || quiz.status === "TERMINATED" ? "default" : "secondary"}>
+									{quiz.status === "SUBMITTED" || quiz.status === "TERMINATED"
+										? "Completed"
+										: quiz.status === "IN_PROGRESS"
+										? "In Progress"
+										: quiz.status === "EXPIRED"
+										? "Expired"
+										: "Pending"}
 								</Badge>
 							</div>
 						</CardContent>

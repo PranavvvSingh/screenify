@@ -29,21 +29,27 @@ interface Question {
 interface QuizInterfaceProps {
   questions: Question[];
   quizToken: string; // Token for API calls
-  onSubmit: () => void;
+  initialVersion: number; // Initial version for optimistic locking
+  onSubmit: (version: number) => void; // Pass current version to submit handler
   onTimePerQuestionChange?: (questionId: string, time: number) => void;
   onQuestionChange?: (questionIndex: number) => void;
+  onQuizEnded?: () => void; // Called when quiz ends (version conflict detected)
 }
 
-export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestionChange, onQuestionChange }: QuizInterfaceProps) {
+export function QuizInterface({ questions, quizToken, initialVersion, onSubmit, onTimePerQuestionChange, onQuestionChange, onQuizEnded }: QuizInterfaceProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [questionStartTimes, setQuestionStartTimes] = useState<Record<string, number>>({});
   const [questionTimeTaken, setQuestionTimeTaken] = useState<Record<string, number>>({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
-  // Ref to track pending debounced save
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingAnswerRef = useRef<{ questionId: string; answer: number; timeTaken: number } | null>(null);
+  // Use ref for version to avoid stale closures in async operations
+  // This ensures we always read/write the latest version without race conditions
+  const versionRef = useRef(initialVersion);
+
+  // Ref to track throttle state per question
+  const lastSaveTimeRef = useRef<Record<string, number>>({});
+  const THROTTLE_MS = 500; // 500ms throttle window
 
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
@@ -67,27 +73,20 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
     }
   }, [currentQuestionIndex, currentQuestion?.id, questionStartTimes, onQuestionChange]);
 
-  // Cleanup: save pending answer on unmount
-  useEffect(() => {
-    return () => {
-      // If there's a pending answer when component unmounts, save it
-      if (pendingAnswerRef.current) {
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-        const { questionId, answer, timeTaken } = pendingAnswerRef.current;
-        // Use fetch directly since we can't use async in cleanup
-        fetch(`/api/quiz/${quizToken}/answer`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ questionId, answer, timeTaken }),
-        }).catch(console.error);
-      }
-    };
-  }, [quizToken]);
 
-  // Save answer to backend (without debouncing)
+  // Save answer to backend with throttling and optimistic locking
   const saveAnswerToBackend = async (questionId: string, answer: number, timeTaken: number) => {
+    const now = Date.now();
+    const lastSaveTime = lastSaveTimeRef.current[questionId] || 0;
+
+    // Skip if within throttle window
+    if (now - lastSaveTime < THROTTLE_MS) {
+      return;
+    }
+
+    // Update last save time
+    lastSaveTimeRef.current[questionId] = now;
+
     try {
       const response = await fetch(`/api/quiz/${quizToken}/answer`, {
         method: "POST",
@@ -98,12 +97,23 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
           questionId,
           answer,
           timeTaken,
+          version: versionRef.current,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
+        // Check if quiz has ended (version conflict)
+        if (data.quizEnded) {
+          console.error("Quiz has ended, answer not saved");
+          onQuizEnded?.();
+          return;
+        }
         console.error("Failed to save answer:", data.error);
+      } else if (data.version !== undefined) {
+        // Update version ref for next request
+        versionRef.current = data.version;
       }
     } catch (error) {
       console.error("Error saving answer:", error);
@@ -126,22 +136,6 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
     }
   };
 
-  // Save pending answer immediately (called before navigation)
-  const savePendingAnswerImmediately = async () => {
-    if (pendingAnswerRef.current) {
-      // Clear debounce timer
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-
-      // Save immediately
-      const { questionId, answer, timeTaken } = pendingAnswerRef.current;
-      await saveAnswerToBackend(questionId, answer, timeTaken);
-      pendingAnswerRef.current = null;
-    }
-  };
-
   const handleAnswerChange = (value: string) => {
     const answerIndex = parseInt(value);
 
@@ -157,61 +151,41 @@ export function QuizInterface({ questions, quizToken, onSubmit, onTimePerQuestio
       ? Math.floor((Date.now() - questionStartTimes[questionId]) / 1000)
       : 0;
 
-    // Store pending answer
-    pendingAnswerRef.current = { questionId, answer: answerIndex, timeTaken };
-
-    // Clear existing debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new debounce timer (2000ms)
-    debounceTimerRef.current = setTimeout(() => {
-      saveAnswerToBackend(questionId, answerIndex, timeTaken);
-      pendingAnswerRef.current = null;
-      debounceTimerRef.current = null;
-    }, 2000);
+    // Save to backend (throttled - first click saves immediately, subsequent clicks within 500ms are ignored)
+    saveAnswerToBackend(questionId, answerIndex, timeTaken);
   };
 
-  const handleNext = async () => {
-    // Save pending answer immediately before navigation
-    await savePendingAnswerImmediately();
+  const handleNext = () => {
     recordTimeForCurrentQuestion();
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
-  const handlePrevious = async () => {
-    // Save pending answer immediately before navigation
-    await savePendingAnswerImmediately();
+  const handlePrevious = () => {
     recordTimeForCurrentQuestion();
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 
-  const handleQuestionNavigate = async (index: number) => {
-    // Save pending answer immediately before navigation
-    await savePendingAnswerImmediately();
+  const handleQuestionNavigate = (index: number) => {
     recordTimeForCurrentQuestion();
     setCurrentQuestionIndex(index);
   };
 
-  const handleSubmitClick = async () => {
+  const handleSubmitClick = () => {
     if (!allAnswered) {
       return;
     }
-    // Save pending answer immediately before showing dialog
-    await savePendingAnswerImmediately();
     recordTimeForCurrentQuestion();
     setShowSubmitDialog(true);
   };
 
   const handleConfirmSubmit = () => {
     // Answers are already saved individually via the answer API
-    // Just trigger the final submission
-    onSubmit();
+    // Pass current version for optimistic locking
+    onSubmit(versionRef.current);
   };
 
   const getQuestionStatus = (index: number) => {

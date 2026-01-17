@@ -29,7 +29,7 @@ interface Role {
   createdAt: string;
   quizzes: {
     id: string;
-    completed: boolean;
+    status: "PENDING" | "IN_PROGRESS" | "SUBMITTED" | "TERMINATED" | "EXPIRED";
     result: { standardScore: number | null } | null;
   }[];
 }
@@ -202,7 +202,7 @@ export function RolesList() {
           {roles.map((role) => {
             const allSkills = [...(role.jd.required_skills || []), ...(role.jd.preferred_skills || [])];
             const candidateCount = role.quizzes.length;
-            const completedCount = role.quizzes.filter((q) => q.completed).length;
+            const completedCount = role.quizzes.filter((q) => q.status === "SUBMITTED" || q.status === "TERMINATED").length;
 
             return (
               <Link key={role.id} href={`/recruiter/roles/${role.id}`}>

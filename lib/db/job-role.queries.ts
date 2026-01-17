@@ -35,22 +35,36 @@ export async function getJobRoleWithStats(roleId: string) {
 
   if (!role) return null;
 
-  // Get completed count
+  // Get completed count (SUBMITTED or TERMINATED status)
   const completedCount = await prisma.quiz.count({
-    where: { jobRoleId: roleId, completed: true },
+    where: {
+      jobRoleId: roleId,
+      status: { in: ["SUBMITTED", "TERMINATED"] },
+    },
   });
 
-  // Get average score from QuizResult table
-  const avgScoreResult = await prisma.quizResult.aggregate({
+  // Get average score from QuizResult - compute from standardCorrect/standardTotal
+  const results = await prisma.quizResult.findMany({
     where: { quiz: { jobRoleId: roleId } },
-    _avg: { standardScore: true },
+    select: { standardCorrect: true, standardTotal: true },
   });
+
+  let avgScore: number | null = null;
+  if (results.length > 0) {
+    const totalScore = results.reduce((acc, r) => {
+      if (r.standardTotal > 0) {
+        return acc + (r.standardCorrect / r.standardTotal) * 100;
+      }
+      return acc;
+    }, 0);
+    avgScore = totalScore / results.length;
+  }
 
   return {
     ...role,
     totalCandidates: role._count.quizzes,
     completedAssessments: completedCount,
-    avgScore: avgScoreResult._avg.standardScore,
+    avgScore,
   };
 }
 
@@ -70,6 +84,7 @@ export interface QuizFilters {
 
 /**
  * Get paginated quizzes for a role with filters and sorting
+ * Note: verificationStatus filter requires post-filtering since it's computed at runtime
  */
 export async function getQuizzesByRole(
   roleId: string,
@@ -89,16 +104,14 @@ export async function getQuizzesByRole(
     ];
   }
 
-  // Quiz status filter
+  // Quiz status filter - now using Quiz.status enum
   if (filters.quizStatus) {
     if (filters.quizStatus === "pending") {
-      where.completed = false;
-      where.result = { is: null };
+      where.status = "PENDING";
     } else if (filters.quizStatus === "in_progress") {
-      where.completed = false;
-      where.result = { status: "IN_PROGRESS" };
+      where.status = "IN_PROGRESS";
     } else if (filters.quizStatus === "completed") {
-      where.completed = true;
+      where.status = { in: ["SUBMITTED", "TERMINATED"] };
     }
   }
 
@@ -107,13 +120,7 @@ export async function getQuizzesByRole(
     where.candidateStatus = filters.candidateStatus;
   }
 
-  // Verification status filter
-  if (filters.verificationStatus) {
-    where.result = {
-      ...((where.result as Prisma.QuizResultWhereInput) || {}),
-      verificationStatus: filters.verificationStatus,
-    };
-  }
+  // Note: verificationStatus filter is handled after fetching since it's computed
 
   // Date range filters
   if (filters.addedAfter || filters.addedBefore) {
@@ -133,13 +140,14 @@ export async function getQuizzesByRole(
   if (filters.sortBy) {
     switch (filters.sortBy) {
       case "score":
-        orderBy = { result: { standardScore: sortOrder } };
+        // Sort by standardCorrect (descending by default shows highest first)
+        orderBy = { result: { standardCorrect: sortOrder } };
         break;
       case "createdAt":
         orderBy = { createdAt: sortOrder };
         break;
       case "completedAt":
-        orderBy = { result: { submittedAt: sortOrder } };
+        orderBy = { endedAt: sortOrder };
         break;
       case "name":
         orderBy = { candidateName: sortOrder };
@@ -156,14 +164,15 @@ export async function getQuizzesByRole(
         candidateEmail: true,
         candidateStatus: true,
         token: true,
-        completed: true,
+        status: true,
+        endedAt: true,
         createdAt: true,
         result: {
           select: {
-            standardScore: true,
-            verificationStatus: true,
-            status: true,
-            submittedAt: true,
+            standardCorrect: true,
+            standardTotal: true,
+            verificationCorrect: true,
+            verificationTotal: true,
           },
         },
       },
@@ -195,10 +204,11 @@ export async function getJobRolesWithQuizzes() {
       quizzes: {
         select: {
           id: true,
-          completed: true,
+          status: true,
           result: {
             select: {
-              standardScore: true,
+              standardCorrect: true,
+              standardTotal: true,
             },
           },
         },
@@ -251,10 +261,11 @@ export async function getJobRolesPaginated(
         quizzes: {
           select: {
             id: true,
-            completed: true,
+            status: true,
             result: {
               select: {
-                standardScore: true,
+                standardCorrect: true,
+                standardTotal: true,
               },
             },
           },
@@ -282,13 +293,11 @@ export async function getDashboardStats() {
   const [totalRoles, totalCandidates, pendingReviews] = await prisma.$transaction([
     prisma.jobRole.count(),
     prisma.quiz.count(),
+    // Pending reviews: completed quizzes (SUBMITTED/TERMINATED) with PENDING candidateStatus
     prisma.quiz.count({
       where: {
-        completed: true,
-        OR: [
-          { result: null },
-          { result: { standardScore: null } }
-        ]
+        status: { in: ["SUBMITTED", "TERMINATED"] },
+        candidateStatus: "PENDING",
       }
     })
   ]);

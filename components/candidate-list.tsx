@@ -31,12 +31,11 @@ interface Quiz {
   candidateEmail: string;
   candidateStatus: "PENDING" | "SHORTLISTED" | "REJECTED";
   token: string;
-  completed: boolean;
+  status: "PENDING" | "IN_PROGRESS" | "SUBMITTED" | "TERMINATED" | "EXPIRED";
   createdAt: string;
   result: {
     standardScore: number | null;
     verificationStatus: "VERIFIED" | "QUESTIONABLE" | "DISCREPANCY" | null;
-    status: string;
     submittedAt: string | null;
   } | null;
 }
@@ -188,13 +187,18 @@ export function CandidateList({ roleId, initialTotal = 0 }: CandidateListProps) 
 
   // Badge configurations
   const getQuizStatusConfig = (quiz: Quiz) => {
-    if (quiz.completed) {
-      return { label: "Completed", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" };
+    switch (quiz.status) {
+      case "SUBMITTED":
+      case "TERMINATED":
+        return { label: "Completed", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" };
+      case "IN_PROGRESS":
+        return { label: "In Progress", className: "bg-blue-500/10 text-blue-600 border-blue-500/20" };
+      case "EXPIRED":
+        return { label: "Expired", className: "bg-gray-500/10 text-gray-600 border-gray-500/20" };
+      case "PENDING":
+      default:
+        return { label: "Pending", className: "bg-amber-500/10 text-amber-600 border-amber-500/20" };
     }
-    if (quiz.result?.status === "IN_PROGRESS") {
-      return { label: "In Progress", className: "bg-blue-500/10 text-blue-600 border-blue-500/20" };
-    }
-    return { label: "Pending", className: "bg-amber-500/10 text-amber-600 border-amber-500/20" };
   };
 
   const getVerificationConfig = (status: string | null | undefined) => {

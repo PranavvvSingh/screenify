@@ -10,15 +10,18 @@ export {
   getQuizWithOwnership,
   getQuizByCandidate,
   insertQuiz,
-  updateQuizCompleted,
+  startQuiz,
+  submitQuiz,
+  terminateQuiz,
   updateQuizCandidateStatus,
+  updateQuizProctoringMetadata,
   // QuizResult
   insertQuizResult,
   getQuizResultByQuizId,
-  updateQuizResultSubmitted,
   updateQuizResultEvaluated,
   // QuizAnswer
   upsertQuizAnswer,
+  upsertQuizAnswerWithLock,
 } from "./quiz.queries";
 
 // JobRole queries

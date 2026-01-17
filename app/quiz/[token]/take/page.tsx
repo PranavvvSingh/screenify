@@ -20,10 +20,11 @@ interface Question {
 
 interface QuizSession {
   quizId: string;
-  resultId: string;
   questions: Question[];
-  duration: number;
+  duration: number; // Duration in seconds
   startedAt: string;
+  remainingTime: number; // Remaining time in seconds
+  version: number; // Version for optimistic locking
   alreadyStarted: boolean;
 }
 
@@ -34,6 +35,7 @@ export default function QuizTakePage() {
 
   const [loading, setLoading] = useState(true);
   const [quizSession, setQuizSession] = useState<QuizSession | null>(null);
+  const [currentVersion, setCurrentVersion] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [stopTimer, setStopTimer] = useState(false);
@@ -56,6 +58,7 @@ export default function QuizTakePage() {
 
         if (data.success) {
           setQuizSession(data);
+          setCurrentVersion(data.version);
         } else {
           setError("Invalid quiz data received");
         }
@@ -80,14 +83,15 @@ export default function QuizTakePage() {
     setSubmitting(true);
 
     try {
-      // Submit quiz with timeout flag
+      // Submit quiz with timeout flag and current version
       const response = await fetch(`/api/quiz/${token}/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          timedOut: true, // Flag to indicate submission due to timeout
+          timedOut: true,
+          version: currentVersion,
         }),
       });
 
@@ -110,9 +114,11 @@ export default function QuizTakePage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (version: number) => {
     setSubmitting(true);
     setStopTimer(true); // Stop the timer during submission
+    // Update the current version from QuizInterface
+    setCurrentVersion(version);
 
     try {
       // Note: Individual answers are already saved via the answer API
@@ -123,7 +129,8 @@ export default function QuizTakePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          timedOut: false, // Manual submission
+          timedOut: false,
+          version: version,
         }),
       });
 
@@ -149,6 +156,14 @@ export default function QuizTakePage() {
       setSubmitting(false);
       setStopTimer(false); // Resume timer if submission failed
     }
+  };
+
+  const handleQuizEnded = () => {
+    // Quiz ended due to version conflict (already submitted elsewhere)
+    toast.error("Quiz has ended", {
+      description: "Your quiz session has expired or was already submitted.",
+    });
+    router.push(`/quiz/${token}/completed`);
   };
 
   if (loading) {
@@ -227,7 +242,7 @@ export default function QuizTakePage() {
             numOfQuestions={quizSession.questions.length}
             stopTimer={stopTimer}
             onTimeUp={handleTimeUp}
-            timePerQuestion={Math.floor((quizSession.duration * 60) / quizSession.questions.length)}
+            timePerQuestion={Math.floor(quizSession.remainingTime / quizSession.questions.length)}
           />
         </div>
       </nav>
@@ -239,8 +254,10 @@ export default function QuizTakePage() {
         <QuizInterface
           questions={quizSession.questions}
           quizToken={token}
+          initialVersion={currentVersion}
           onSubmit={handleSubmit}
           onQuestionChange={setCurrentQuestionIndex}
+          onQuizEnded={handleQuizEnded}
         />
       </main>
     </div>

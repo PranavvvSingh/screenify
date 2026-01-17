@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getQuizForAnswer, upsertQuizAnswer } from "@/lib/db";
+import { getQuizForAnswer, upsertQuizAnswerWithLock } from "@/lib/db";
+import { canAcceptAnswers } from "@/lib/quiz-helpers";
 
 /**
  * POST /api/quiz/[token]/answer
  * Save individual answer as candidate progresses through quiz
  * Updates existing answer if question already answered (allows changing answers)
+ * Uses optimistic locking to prevent race conditions with quiz submission
  * No authentication required - public endpoint
  */
 export async function POST(
@@ -15,12 +17,20 @@ export async function POST(
     const { token } = await params;
     const body = await request.json();
 
-    const { questionId, answer, timeTaken } = body;
+    const { questionId, answer, timeTaken, version } = body;
 
     // Validate input
     if (!questionId || answer === undefined || answer === null) {
       return NextResponse.json(
         { error: "Missing required fields: questionId, answer" },
+        { status: 400 }
+      );
+    }
+
+    // Validate version is provided for optimistic locking
+    if (version === undefined || version === null) {
+      return NextResponse.json(
+        { error: "Missing required field: version" },
         { status: 400 }
       );
     }
@@ -43,10 +53,15 @@ export async function POST(
       );
     }
 
-    // Check if quiz is already completed
-    if (quiz.completed) {
+    // Check if quiz can accept answers (IN_PROGRESS and not expired)
+    if (!canAcceptAnswers({
+      status: quiz.status,
+      expiresAt: null, // expiresAt only affects starting, not in-progress quizzes
+      startedAt: quiz.startedAt,
+      duration: quiz.duration,
+    })) {
       return NextResponse.json(
-        { error: "Quiz already completed. Cannot update answers." },
+        { error: "Quiz is not active. Cannot submit answers." },
         { status: 410 }
       );
     }
@@ -69,19 +84,32 @@ export async function POST(
     // Check if answer is correct
     const isCorrect = question.correctAnswer === answer;
 
-    // Upsert answer (create or update if already exists)
-    const quizAnswer = await upsertQuizAnswer({
+    // Upsert answer with optimistic locking
+    const result = await upsertQuizAnswerWithLock({
       quizId: quiz.id,
       questionId,
       answer: answer.toString(),
       isCorrect,
       timeTaken: timeTaken || 0,
+      currentVersion: version,
     });
+
+    // If result is null, version mismatch - quiz was submitted or terminated
+    if (!result) {
+      return NextResponse.json(
+        {
+          error: "Quiz has ended. Answer not saved.",
+          quizEnded: true,
+        },
+        { status: 409 } // Conflict
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      answerId: quizAnswer.id,
-      isCorrect, // Optional: can be removed if you don't want to reveal correctness
+      answerId: result.answer.id,
+      version: result.newVersion,
+      // Note: isCorrect removed to prevent answer leakage
     });
   } catch (error) {
     console.error("Error saving answer:", error);

@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getRecruiterByUserId, getQuizById } from "@/lib/db";
+import {
+	getStandardScore,
+	getVerificationStatus,
+	getEffectiveQuizStatus,
+} from "@/lib/quiz-helpers";
 
 export async function GET(
 	request: NextRequest,
@@ -39,7 +44,14 @@ export async function GET(
 		}
 
 		// Parse questions to separate standard and verification questions
-		const questions = quiz.questions as any[];
+		const questions = quiz.questions as Array<{
+			id: string;
+			type: "STANDARD" | "RESUME_VERIFICATION";
+			question: string;
+			options: string[];
+			correctAnswer?: number;
+			correct_answer?: number;
+		}>;
 		const standardQuestions = questions.filter((q) => q.type === "STANDARD");
 		const verificationQuestions = questions.filter((q) => q.type === "RESUME_VERIFICATION");
 
@@ -74,31 +86,44 @@ export async function GET(
 				questionId: question.id,
 				question: question.question,
 				options: question.options,
-				skill: question.skill,
 				correctAnswer: correctAnswerIndex ?? null,
 				candidateAnswer: candidateAnswerIndex,
 				timeTaken: answer?.timeTaken || 0
 			};
 		});
 
-		// Build skill breakdown from answers
-		const skillBreakdown = quiz.result?.skillBreakdown as Record<string, number> | null;
-
-		// Calculate time taken
+		// Calculate time taken from Quiz fields
 		let totalTimeTaken = 0;
-		if (quiz.result?.startedAt && quiz.result?.submittedAt) {
+		if (quiz.startedAt && quiz.endedAt) {
 			totalTimeTaken = Math.floor(
-				(new Date(quiz.result.submittedAt).getTime() - new Date(quiz.result.startedAt).getTime()) / 1000
+				(new Date(quiz.endedAt).getTime() - new Date(quiz.startedAt).getTime()) / 1000
 			);
 		}
 
-		// Parse proctoring metadata
-		const proctoringMetadata = quiz.result?.proctoringMetadata as any;
+		// Parse proctoring metadata from Quiz model
+		const proctoringMetadata = quiz.proctoringMetadata as { tabSwitches?: number; fullscreenExits?: number; events?: unknown[] } | null;
 		const proctoringEvents = {
 			tabSwitches: proctoringMetadata?.tabSwitches || 0,
 			fullscreenExits: proctoringMetadata?.fullscreenExits || 0,
 			events: proctoringMetadata?.events || []
 		};
+
+		// Get effective quiz status (includes computed EXPIRED)
+		const effectiveStatus = getEffectiveQuizStatus({
+			status: quiz.status,
+			expiresAt: quiz.expiresAt,
+			startedAt: quiz.startedAt,
+			duration: quiz.duration,
+		});
+
+		// Compute derived values from result
+		const standardScore = quiz.result
+			? getStandardScore(quiz.result.standardCorrect, quiz.result.standardTotal)
+			: null;
+
+		const verificationStatus = quiz.result
+			? getVerificationStatus(quiz.result.verificationCorrect, quiz.result.verificationTotal)
+			: null;
 
 		// Format the response
 		const response = {
@@ -112,22 +137,22 @@ export async function GET(
 				description: quiz.jobRole.description
 			},
 			duration: quiz.duration,
-			completed: quiz.completed,
+			status: effectiveStatus,
 			createdAt: quiz.createdAt,
+			startedAt: quiz.startedAt,
+			endedAt: quiz.endedAt,
+			proctoringStatus: quiz.proctoringStatus,
 			result: quiz.result
 				? {
-						standardScore: quiz.result.standardScore,
+						// Computed values
+						standardScore,
+						verificationStatus,
+						// Raw counts
 						standardCorrect: quiz.result.standardCorrect,
 						standardTotal: quiz.result.standardTotal,
-						verificationStatus: quiz.result.verificationStatus,
 						verificationCorrect: quiz.result.verificationCorrect,
 						verificationTotal: quiz.result.verificationTotal,
-						skillBreakdown,
-						confidenceScore: quiz.result.confidenceScore,
-						anomalyIndicators: quiz.result.anomalyIndicators,
-						status: quiz.result.status,
-						startedAt: quiz.result.startedAt,
-						submittedAt: quiz.result.submittedAt,
+						// Time taken
 						timeTakenSeconds: totalTimeTaken
 					}
 				: null,

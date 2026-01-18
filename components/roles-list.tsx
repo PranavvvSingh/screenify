@@ -29,7 +29,7 @@ interface Role {
   createdAt: string;
   quizzes: {
     id: string;
-    status: "PENDING" | "IN_PROGRESS" | "SUBMITTED" | "TERMINATED" | "EXPIRED";
+    status: "PENDING" | "IN_PROGRESS" | "SUBMITTED" | "TERMINATED" | "EXPIRED" | "TIMED_OUT";
     result: { standardScore: number | null } | null;
   }[];
 }

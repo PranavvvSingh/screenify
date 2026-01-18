@@ -8,6 +8,7 @@ import {
 } from "@/lib/ollama";
 import type { Question } from "@/types/ollama";
 import { Prisma } from "@prisma/client";
+import { DEFAULT_QUIZ_EXPIRY_HOURS } from "@/lib/constants";
 
 export async function POST(
   request: NextRequest,
@@ -20,7 +21,7 @@ export async function POST(
 
     // Parse request body
     const body = await request.json();
-    const { candidateName, candidateEmail, resumeText } = body;
+    const { candidateName, candidateEmail, resumeText, expiryHours } = body;
 
     // Validate input
     if (!candidateName || !candidateEmail || !resumeText) {
@@ -29,6 +30,10 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    // Calculate expiry date (default: 48 hours from now)
+    const hoursUntilExpiry = expiryHours ?? DEFAULT_QUIZ_EXPIRY_HOURS;
+    const expiresAt = new Date(Date.now() + hoursUntilExpiry * 60 * 60 * 1000);
 
     // Verify role exists and belongs to this recruiter
     const role = await getJobRoleById(roleId);
@@ -83,7 +88,8 @@ export async function POST(
       candidateName,
       candidateEmail,
       questions: allQuestions as unknown as Prisma.InputJsonValue[],
-      duration: totalQuestions * 1, // total minutes
+      duration: totalQuestions * 60, // 1 minute per question, stored in seconds
+      expiresAt,
     });
     console.log("Quiz created with ID:", quiz.id);
 

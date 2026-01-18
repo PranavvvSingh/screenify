@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { Clock, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronUp, ArrowRight, Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface QuizInfo {
   id: string;
   candidateName: string;
+  expiresAt: string | null;
   role: {
     title: string;
     description: string | null;
@@ -74,8 +76,35 @@ export default function QuizLandingPage() {
     }
   }, [token]);
 
-  const handleStartAssessment = () => {
-    // Navigate to quiz taking interface
+  const handleStartAssessment = async () => {
+    // Request fullscreen before navigating
+    try {
+      const elem = document.documentElement;
+
+      // Try to enter fullscreen
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else {
+        // Fallback for older browsers
+        const elemAny = elem as HTMLElement & {
+          webkitRequestFullscreen?: () => Promise<void>;
+          msRequestFullscreen?: () => Promise<void>;
+        };
+        if (elemAny.webkitRequestFullscreen) {
+          await elemAny.webkitRequestFullscreen();
+        } else if (elemAny.msRequestFullscreen) {
+          await elemAny.msRequestFullscreen();
+        }
+      }
+    } catch (error) {
+      // Fullscreen request failed - show warning but continue
+      console.warn("Failed to enter fullscreen:", error);
+      toast.warning("Fullscreen mode unavailable", {
+        description: "The quiz will continue without fullscreen. Your activity will still be monitored.",
+      });
+    }
+
+    // Navigate to quiz taking interface regardless of fullscreen success
     router.push(`/quiz/${token}/take`);
   };
 
@@ -109,30 +138,134 @@ export default function QuizLandingPage() {
             <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
           </div>
         </nav>
-        <div className="max-w-6xl mx-auto px-6 py-20 flex justify-center">
-          <div className="w-full max-w-md py-8 rounded-2xl bg-card shadow-soft-md text-center">
-            <div className="mx-auto h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mb-6">
-              {isCompleted ? (
-                <CheckCircle className="h-8 w-8 text-success" />
-              ) : (
-                <AlertCircle className="h-8 w-8 text-destructive" />
-              )}
+        <div className="max-w-2xl mx-auto px-6 py-12 space-y-6">
+          {/* Status Header Card */}
+          <div className={`p-8 rounded-2xl bg-card shadow-soft-md border ${isCompleted ? 'border-success/20' : 'border-destructive/20'}`}>
+            <div className="text-center">
+              <div className={`mx-auto mb-6 h-20 w-20 rounded-full ${isCompleted ? 'bg-success/10' : 'bg-destructive/10'} flex items-center justify-center`}>
+                {isCompleted ? (
+                  <CheckCircle className="h-12 w-12 text-success" />
+                ) : (
+                  <AlertCircle className="h-12 w-12 text-destructive" />
+                )}
+              </div>
+              <h1 className="text-2xl font-bold text-foreground mb-3">
+                {isCompleted ? "Assessment Already Submitted" : "Unable to Load Assessment"}
+              </h1>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                {isCompleted
+                  ? "Your responses have been submitted successfully. The recruiter will review your assessment and contact you if you are selected for the next round."
+                  : error}
+              </p>
             </div>
-            <h1 className="text-2xl font-semibold text-primary mb-3">
-              {isCompleted ? "Quiz Submitted" : "Unable to Load Quiz"}
-            </h1>
-            <p className="text-muted-foreground">
-              {isCompleted
-                ? "Your responses have been submitted successfully. The recruiter will contact you if you are selected for the next round."
-                : error}
-            </p>
-            {!isCompleted && (
-              <Alert variant="destructive" className="text-left mt-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+          </div>
+
+          {/* Additional Info Card */}
+          <div className="p-6 rounded-2xl bg-card shadow-soft-md">
+            <h2 className="text-lg font-semibold text-foreground mb-6">
+              {isCompleted ? "What Happens Next?" : "What You Can Do"}
+            </h2>
+
+            {isCompleted ? (
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                    1
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">
+                      Your responses are being evaluated
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Our system is analyzing your answers and calculating your performance metrics.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                    2
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">
+                      Recruiter will review your results
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      The hiring team will review your assessment along with other candidates.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                    3
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">
+                      You&apos;ll be contacted for next steps
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      If selected to move forward, you will receive an email or call from the recruiter.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                    1
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">
+                      Verify your link
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Make sure you&apos;re using the correct assessment link provided by the recruiter.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                    2
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">
+                      Contact the recruiter
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      If the issue persists, reach out to the recruiter who sent you this assessment link.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                    3
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">
+                      Request a new link
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      The recruiter may be able to generate a new assessment link for you if needed.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
+
+            <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-border">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">
+                  {isCompleted
+                    ? "You can safely close this page. No further action is required from your end."
+                    : "If you believe this is an error, please contact the recruiter directly for assistance."}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -216,6 +349,19 @@ export default function QuizLandingPage() {
               </div>
             </div>
           </div>
+
+          {/* Expiry Notice */}
+          {quizInfo.expiresAt && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border mb-6">
+              <Calendar className="h-5 w-5 text-muted-foreground shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                This link expires on{" "}
+                <span className="font-medium text-foreground">
+                  {format(new Date(quizInfo.expiresAt), "MMM d, yyyy 'at' h:mm a")}
+                </span>
+              </p>
+            </div>
+          )}
 
           {/* Role Description - Collapsible */}
           {quizInfo.role.description && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Timer from "@/components/quiz/timer";
 import { QuizInterface } from "@/components/quiz/quiz-interface";
@@ -8,6 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useProctoring, type ProctoringEvent } from "@/hooks/use-proctoring";
+import { FullscreenModal } from "@/components/proctoring-warning";
 
 interface Question {
   id: string;
@@ -40,6 +42,48 @@ export default function QuizTakePage() {
   const [submitting, setSubmitting] = useState(false);
   const [stopTimer, setStopTimer] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const isSubmittingRef = useRef(false); // Guard against double submission
+
+  // Fullscreen modal state
+  const [showFullscreenModal, setShowFullscreenModal] = useState(false);
+
+  // Handle fullscreen exit - show blocking modal
+  const handleFullscreenExit = useCallback(() => {
+    setShowFullscreenModal(true);
+  }, []);
+
+  // Handle proctoring violation - show toast for non-fullscreen violations
+  const handleViolation = useCallback((event: ProctoringEvent) => {
+    // For non-fullscreen violations, show a toast
+    if (event.type !== "FULLSCREEN_EXIT") {
+      toast.warning("Suspicious activity recorded", {
+        description: "This activity has been logged and will be visible to the recruiter.",
+      });
+    }
+  }, []);
+
+  // Initialize proctoring hook
+  const { isFullscreen, requestFullscreen } = useProctoring({
+    quizToken: token,
+    enabled: !!quizSession && !submitting,
+    onFullscreenExit: handleFullscreenExit,
+    onViolation: handleViolation,
+  });
+
+  // Handle return to fullscreen from modal
+  const handleReturnToFullscreen = useCallback(async () => {
+    const success = await requestFullscreen();
+    if (success) {
+      setShowFullscreenModal(false);
+    }
+  }, [requestFullscreen]);
+
+  // Close fullscreen modal when fullscreen is restored
+  useEffect(() => {
+    if (isFullscreen && showFullscreenModal) {
+      setShowFullscreenModal(false);
+    }
+  }, [isFullscreen, showFullscreenModal]);
 
   useEffect(() => {
     async function startQuiz() {
@@ -75,7 +119,11 @@ export default function QuizTakePage() {
     }
   }, [token]);
 
-  const handleTimeUp = async () => {
+  const handleTimeUp = useCallback(async () => {
+    // Guard against double submission
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     toast.error("Time's up!", {
       description: "Your quiz has been automatically submitted.",
     });
@@ -84,6 +132,7 @@ export default function QuizTakePage() {
 
     try {
       // Submit quiz with timeout flag and current version
+      // Proctoring data is read from DB by server
       const response = await fetch(`/api/quiz/${token}/submit`, {
         method: "POST",
         headers: {
@@ -112,9 +161,13 @@ export default function QuizTakePage() {
         description: "Please contact support.",
       });
     }
-  };
+  }, [token, currentVersion, router]);
 
   const handleSubmit = async (version: number) => {
+    // Guard against double submission
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     setSubmitting(true);
     setStopTimer(true); // Stop the timer during submission
     // Update the current version from QuizInterface
@@ -123,6 +176,7 @@ export default function QuizTakePage() {
     try {
       // Note: Individual answers are already saved via the answer API
       // This just marks the quiz as complete and triggers evaluation
+      // Proctoring data is read from DB by server
       const response = await fetch(`/api/quiz/${token}/submit`, {
         method: "POST",
         headers: {
@@ -155,6 +209,7 @@ export default function QuizTakePage() {
       });
       setSubmitting(false);
       setStopTimer(false); // Resume timer if submission failed
+      isSubmittingRef.current = false; // Allow retry
     }
   };
 
@@ -234,32 +289,52 @@ export default function QuizTakePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
-          <Timer
-            numOfQuestions={quizSession.questions.length}
-            stopTimer={stopTimer}
-            onTimeUp={handleTimeUp}
-            timePerQuestion={Math.floor(quizSession.remainingTime / quizSession.questions.length)}
-          />
-        </div>
-      </nav>
+    <>
+      <div className="min-h-screen bg-background">
+        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
+            <div className="flex items-center gap-4">
+              {/* Fullscreen indicator */}
+              {!isFullscreen && (
+                <button
+                  onClick={requestFullscreen}
+                  className="text-xs px-3 py-1.5 bg-warning/10 text-warning rounded-full flex items-center gap-1.5 hover:bg-warning/20 transition-colors"
+                >
+                  <AlertCircle className="h-3 w-3" />
+                  Not in fullscreen
+                </button>
+              )}
+              <Timer
+                numOfQuestions={quizSession.questions.length}
+                stopTimer={stopTimer}
+                onTimeUp={handleTimeUp}
+                timePerQuestion={Math.floor(quizSession.remainingTime / quizSession.questions.length)}
+              />
+            </div>
+          </div>
+        </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <p className="text-sm text-muted-foreground mb-6">
-          Question {currentQuestionIndex + 1} of {quizSession.questions.length}
-        </p>
-        <QuizInterface
-          questions={quizSession.questions}
-          quizToken={token}
-          initialVersion={currentVersion}
-          onSubmit={handleSubmit}
-          onQuestionChange={setCurrentQuestionIndex}
-          onQuizEnded={handleQuizEnded}
-        />
-      </main>
-    </div>
+        <main className="max-w-4xl mx-auto px-6 py-8">
+          <p className="text-sm text-muted-foreground mb-6">
+            Question {currentQuestionIndex + 1} of {quizSession.questions.length}
+          </p>
+          <QuizInterface
+            questions={quizSession.questions}
+            quizToken={token}
+            initialVersion={currentVersion}
+            onSubmit={handleSubmit}
+            onQuestionChange={setCurrentQuestionIndex}
+            onQuizEnded={handleQuizEnded}
+          />
+        </main>
+      </div>
+
+      {/* Fullscreen exit blocking modal */}
+      <FullscreenModal
+        open={showFullscreenModal}
+        onRequestFullscreen={handleReturnToFullscreen}
+      />
+    </>
   );
 }

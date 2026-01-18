@@ -31,7 +31,7 @@ interface Quiz {
   candidateEmail: string;
   candidateStatus: "PENDING" | "SHORTLISTED" | "REJECTED";
   token: string;
-  status: "PENDING" | "IN_PROGRESS" | "SUBMITTED" | "TERMINATED" | "EXPIRED";
+  status: "PENDING" | "IN_PROGRESS" | "SUBMITTED" | "TERMINATED" | "EXPIRED" | "TIMED_OUT";
   createdAt: string;
   result: {
     standardScore: number | null;
@@ -195,6 +195,8 @@ export function CandidateList({ roleId, initialTotal = 0 }: CandidateListProps) 
         return { label: "In Progress", className: "bg-blue-500/10 text-blue-600 border-blue-500/20" };
       case "EXPIRED":
         return { label: "Expired", className: "bg-gray-500/10 text-gray-600 border-gray-500/20" };
+      case "TIMED_OUT":
+        return { label: "Timed Out", className: "bg-orange-500/10 text-orange-600 border-orange-500/20" };
       case "PENDING":
       default:
         return { label: "Pending", className: "bg-amber-500/10 text-amber-600 border-amber-500/20" };

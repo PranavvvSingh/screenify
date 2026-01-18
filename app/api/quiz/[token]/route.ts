@@ -63,6 +63,16 @@ export async function GET(
       );
     }
 
+    if (effectiveStatus === "TIMED_OUT") {
+      return NextResponse.json(
+        {
+          error: "Quiz has timed out",
+          timedOut: true,
+        },
+        { status: 410 }
+      );
+    }
+
     // Calculate question count from stored questions
     const questions = quiz.questions as Array<{ id: string; question: string }>;
     const questionCount = questions?.length || 0;
@@ -82,6 +92,7 @@ export async function GET(
         id: quiz.id,
         candidateName: quiz.candidateName,
         status: effectiveStatus,
+        expiresAt: quiz.expiresAt?.toISOString() || null,
         role: {
           title: quiz.jobRole.title,
           description: quiz.jobRole.description,

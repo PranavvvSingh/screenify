@@ -1,7 +1,7 @@
 "use client";
 
 import { formatTime } from "@/lib/utils/format-time";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { RxLapTimer as TimerIcon } from "react-icons/rx";
 import { cn } from "@/lib/utils";
 
@@ -22,15 +22,21 @@ const Timer = ({
 }: TimerProps) => {
   const initialTime = timePerQuestion * numOfQuestions;
   const [time, setTime] = useState(initialTime);
+  const timeUpCalledRef = useRef(false);
+  const onTimeUpRef = useRef(onTimeUp);
+
+  // Keep onTimeUp ref updated without causing effect re-runs
+  useEffect(() => {
+    onTimeUpRef.current = onTimeUp;
+  }, [onTimeUp]);
 
   useEffect(() => {
     if (stopTimer) return;
 
     const intervalId = setInterval(() => {
       setTime((prevTime) => {
-        if (prevTime <= 0) {
+        if (prevTime <= 1) {
           clearInterval(intervalId);
-          onTimeUp();
           return 0;
         }
         return prevTime - 1;
@@ -38,7 +44,15 @@ const Timer = ({
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [stopTimer, onTimeUp]);
+  }, [stopTimer]);
+
+  // Handle time up in a separate effect to avoid setState during render
+  useEffect(() => {
+    if (time === 0 && !timeUpCalledRef.current && !stopTimer) {
+      timeUpCalledRef.current = true;
+      onTimeUpRef.current();
+    }
+  }, [time, stopTimer]);
 
   // Calculate color based on fixed time thresholds
   const getTimeColor = () => {

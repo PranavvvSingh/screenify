@@ -9,6 +9,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle, Clock, AlertTriangle, ArrowLeft, Monitor, Eye, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 type VerificationStatus = "VERIFIED" | "QUESTIONABLE" | "DISCREPANCY" | null;
 type QuizStatus = "PENDING" | "IN_PROGRESS" | "SUBMITTED" | "TERMINATED" | "EXPIRED";
@@ -39,6 +40,8 @@ interface QuizResult {
 	verificationStatus: VerificationStatus;
 	verificationCorrect: number;
 	verificationTotal: number;
+	proctoringVerdict: "CLEAN" | "SUSPICIOUS" | "CHEATING";
+	proctoringViolationCount: number;
 	timeTakenSeconds: number | null;
 }
 
@@ -60,11 +63,7 @@ interface QuizDetails {
 	result: QuizResult | null;
 	standardDetails: QuestionDetail[];
 	verificationDetails: VerificationDetail[];
-	proctoringEvents: {
-		tabSwitches: number;
-		fullscreenExits: number;
-		events: ProctoringEvent[];
-	};
+	proctoringEvents: ProctoringEvent[];
 	totalQuestions: number;
 	standardQuestionsCount: number;
 	verificationQuestionsCount: number;
@@ -124,7 +123,9 @@ export default function CandidateDetailPage() {
 			setQuiz({ ...quiz, candidateStatus: data.candidateStatus });
 		} catch (err) {
 			console.error("Error updating candidate status:", err);
-			alert("Failed to update candidate status. Please try again.");
+			toast.error("Failed to update candidate status", {
+				description: "Please try again",
+			});
 		} finally {
 			setUpdatingStatus(false);
 		}
@@ -320,31 +321,6 @@ export default function CandidateDetailPage() {
 										<p className='text-sm text-muted-foreground mt-1'>Time Taken & Duration</p>
 									</div>
 								)}
-
-									{result.skillBreakdown && Object.keys(result.skillBreakdown).length > 0 && (
-										<>
-											<Separator />
-											<div>
-												<p className='text-sm font-medium mb-3'>Skill Breakdown</p>
-												<div className='space-y-3'>
-													{Object.entries(result.skillBreakdown).map(([skill, score]) => (
-														<div key={skill}>
-															<div className='flex justify-between text-sm mb-1'>
-																<span className='font-medium'>{skill}</span>
-																<span className='text-muted-foreground'>{score.toFixed(0)}%</span>
-															</div>
-															<div className='h-2 bg-muted rounded-full overflow-hidden'>
-																<div
-																	className='h-full bg-primary rounded-full transition-all'
-																	style={{ width: `${score}%` }}
-																/>
-															</div>
-														</div>
-													))}
-												</div>
-											</div>
-										</>
-									)}
 								</div>
 							) : (
 								<div className='text-center py-8 text-muted-foreground'>
@@ -537,29 +513,7 @@ export default function CandidateDetailPage() {
 						</CardContent>
 					</Card>
 
-					{/* Confidence Score */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Confidence Score</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className='text-center'>
-								{hasResult && result && result.confidenceScore !== null ? (
-									<>
-										<p className='text-5xl font-bold text-primary mb-2'>{result.confidenceScore.toFixed(0)}%</p>
-										<p className='text-sm text-muted-foreground'>Based on proctoring events</p>
-									</>
-								) : (
-									<>
-										<p className='text-5xl font-bold text-muted-foreground'>-</p>
-										<p className='text-sm text-muted-foreground mt-2'>Not yet evaluated</p>
-									</>
-								)}
-							</div>
-						</CardContent>
-					</Card>
-
-					{/* Proctoring Events */}
+					{/* Proctoring Flags */}
 					<Card>
 						<CardHeader>
 							<CardTitle className='flex items-center gap-2'>
@@ -571,21 +525,26 @@ export default function CandidateDetailPage() {
 							{hasResult && result ? (
 								<>
 									<div className='flex justify-between items-center'>
-										<span className='text-sm text-muted-foreground'>Tab Switches</span>
-										<span className='font-semibold text-lg'>{quiz.proctoringEvents.tabSwitches}</span>
+										<span className='text-sm text-muted-foreground'>Verdict</span>
+										<Badge variant={
+											result.proctoringVerdict === "CLEAN" ? "secondary" :
+											result.proctoringVerdict === "SUSPICIOUS" ? "outline" : "destructive"
+										}>
+											{result.proctoringVerdict}
+										</Badge>
 									</div>
 									<div className='flex justify-between items-center'>
-										<span className='text-sm text-muted-foreground'>Fullscreen Exits</span>
-										<span className='font-semibold text-lg'>{quiz.proctoringEvents.fullscreenExits}</span>
+										<span className='text-sm text-muted-foreground'>Total Violations</span>
+										<span className='font-semibold text-lg'>{result.proctoringViolationCount}</span>
 									</div>
 
-									{quiz.proctoringEvents.events.length > 0 && (
+									{quiz.proctoringEvents.length > 0 && (
 										<>
 											<Separator className='my-3' />
 											<div>
 												<p className='text-sm font-medium mb-2'>Event Log</p>
 												<div className='space-y-2 max-h-48 overflow-y-auto'>
-													{quiz.proctoringEvents.events.map((event, idx) => (
+													{quiz.proctoringEvents.map((event, idx) => (
 														<div key={idx} className='text-xs p-2 bg-muted/50 rounded border'>
 															<div className='flex justify-between items-start gap-2'>
 																<span className='font-medium'>{event.type}</span>
@@ -593,7 +552,6 @@ export default function CandidateDetailPage() {
 																	{new Date(event.timestamp).toLocaleTimeString()}
 																</span>
 															</div>
-															{event.details && <p className='text-muted-foreground mt-1'>{event.details}</p>}
 														</div>
 													))}
 												</div>

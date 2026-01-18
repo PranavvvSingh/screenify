@@ -73,11 +73,9 @@ model Verification {
   @@map("verifications")
 }
 
-// ============================================
-// APPLICATION DOMAIN
-// ============================================
 
-// Recruiter table - Users who create job roles and screen candidates
+// APPLICATION DOMAIN
+
 model Recruiter {
   id        String   @id @default(cuid())
   userId    String   @unique
@@ -116,7 +114,7 @@ model Quiz {
   jobRoleId       String
   candidateName   String
   candidateEmail  String
-  token           String          @unique @default(cuid()) // 
+  token           String          @unique @default(cuid()) //
   questions       Json // JSONB: [{ id, type: 'STANDARD' | 'RESUME_VERIFICATION', question, options: [], correctAnswer }]
   duration        Int             @default(1200) // Duration in seconds (default 20 minutes)
   candidateStatus CandidateStatus @default(PENDING) // Accept/Reject
@@ -127,8 +125,7 @@ model Quiz {
   startedAt          DateTime?
   endedAt            DateTime?
 
-  proctoringStatus   ProctoringStatus @default(CLEAN)
-  proctoringMetadata Json? // JSONB: { tabSwitches, fullscreenExits, events: [...] }
+  proctoringEvents Json @default("[]") // Append-only array of { type, timestamp } events
 
   version Int @default(0) // Optimistic locking for answer submission race conditions
 
@@ -170,6 +167,9 @@ model QuizResult {
   verificationCorrect Int
   verificationTotal   Int
 
+  proctoringVerdict        ProctoringVerdict @default(CLEAN)
+  proctoringViolationCount Int               @default(0)
+
   quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@map("quiz_results")
@@ -180,17 +180,19 @@ enum QuizStatus {
   IN_PROGRESS // Candidate taking quiz
   SUBMITTED   // Normal submission
   TERMINATED  // Ended due to cheating
-  // Note: EXPIRED is computed at runtime from expiresAt/startedAt+duration
+  // Runtime-computed statuses:
+  // - EXPIRED: PENDING + expiresAt < now (link expired before starting)
+  // - TIMED_OUT: IN_PROGRESS + startedAt + duration < now (started but didn't submit in time)
 }
 
-enum ProctoringStatus {
+enum ProctoringVerdict {
   CLEAN      // No violations
-  SUSPICIOUS // Some violations detected
-  FLAGGED    // Excessive violations
+  SUSPICIOUS // Some violations 
+  CHEATING   // Excessive violations
 }
 
 enum CandidateStatus {
-  PENDING // Default state - no decision yet
-  SHORTLISTED // Candidate passed to next round
-  REJECTED // Candidate rejected
+  PENDING // Default state
+  SHORTLISTED 
+  REJECTED 
 }

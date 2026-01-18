@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import type { Prisma, ProctoringStatus } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+
+// Type for proctoring events
+export interface ProctoringEvent {
+  type: "TAB_SWITCH" | "FULLSCREEN_EXIT" | "WINDOW_BLUR" | "MULTIPLE_DISPLAYS";
+  timestamp: string;
+}
 
 // QUIZ QUERIES
 
@@ -153,8 +159,7 @@ export async function getQuizById(quizId: string) {
       startedAt: true,
       endedAt: true,
       expiresAt: true,
-      proctoringStatus: true,
-      proctoringMetadata: true,
+      proctoringEvents: true,
       createdAt: true,
       jobRole: {
         select: {
@@ -171,6 +176,8 @@ export async function getQuizById(quizId: string) {
           standardTotal: true,
           verificationCorrect: true,
           verificationTotal: true,
+          proctoringVerdict: true,
+          proctoringViolationCount: true,
         },
       },
       answers: {
@@ -272,15 +279,35 @@ export async function submitQuiz(quizId: string, currentVersion: number) {
 }
 
 /**
- * Terminate a quiz due to proctoring violations
+ * Append a proctoring event to a quiz's event log
+ * Only works if quiz is in progress
  */
-export async function terminateQuiz(quizId: string, proctoringStatus: ProctoringStatus) {
+export async function appendProctoringEvent(
+  token: string,
+  event: ProctoringEvent
+) {
+  // First get the quiz to check status and get current events
+  const quiz = await prisma.quiz.findUnique({
+    where: { token },
+    select: {
+      id: true,
+      status: true,
+      proctoringEvents: true,
+    },
+  });
+
+  if (!quiz || quiz.status !== "IN_PROGRESS") {
+    return null;
+  }
+
+  // Append event to existing array
+  const currentEvents = (quiz.proctoringEvents as unknown as ProctoringEvent[]) || [];
+  const updatedEvents = [...currentEvents, event];
+
   return prisma.quiz.update({
-    where: { id: quizId },
+    where: { id: quiz.id },
     data: {
-      status: "TERMINATED",
-      endedAt: new Date(),
-      proctoringStatus,
+      proctoringEvents: updatedEvents as unknown as Prisma.InputJsonValue,
     },
   });
 }
@@ -328,7 +355,7 @@ export async function getQuizResultByQuizId(quizId: string) {
 }
 
 /**
- * Update quiz result with evaluation scores
+ * Update quiz result with evaluation scores and proctoring verdict
  */
 export async function updateQuizResultEvaluated(
   resultId: string,
@@ -337,6 +364,8 @@ export async function updateQuizResultEvaluated(
     standardTotal: number;
     verificationCorrect: number;
     verificationTotal: number;
+    proctoringVerdict: "CLEAN" | "SUSPICIOUS" | "CHEATING";
+    proctoringViolationCount: number;
   }
 ) {
   return prisma.quizResult.update({
@@ -450,18 +479,14 @@ export async function upsertQuizAnswer(data: {
 }
 
 /**
- * Update proctoring metadata for a quiz
+ * Get proctoring events for a quiz
  */
-export async function updateQuizProctoringMetadata(
-  quizId: string,
-  metadata: Prisma.InputJsonValue,
-  proctoringStatus: ProctoringStatus
-) {
-  return prisma.quiz.update({
+export async function getQuizProctoringEvents(quizId: string) {
+  const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
-    data: {
-      proctoringMetadata: metadata,
-      proctoringStatus,
+    select: {
+      proctoringEvents: true,
     },
   });
+  return (quiz?.proctoringEvents as unknown as ProctoringEvent[]) || [];
 }

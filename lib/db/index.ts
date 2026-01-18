@@ -12,9 +12,11 @@ export {
   insertQuiz,
   startQuiz,
   submitQuiz,
-  terminateQuiz,
   updateQuizCandidateStatus,
-  updateQuizProctoringMetadata,
+  // Proctoring
+  appendProctoringEvent,
+  getQuizProctoringEvents,
+  type ProctoringEvent,
   // QuizResult
   insertQuizResult,
   getQuizResultByQuizId,

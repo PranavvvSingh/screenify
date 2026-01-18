@@ -58,6 +58,14 @@ export async function POST(
       );
     }
 
+    // Check if quiz has timed out (started but ran out of time)
+    if (effectiveStatus === "TIMED_OUT") {
+      return NextResponse.json(
+        { error: "Quiz has timed out" },
+        { status: 410 }
+      );
+    }
+
     // Check if quiz has already been started (IN_PROGRESS)
     if (quiz.status === "IN_PROGRESS" && quiz.startedAt) {
       // Quiz already started, return existing session with remaining time

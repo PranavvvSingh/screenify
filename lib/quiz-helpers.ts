@@ -6,9 +6,11 @@ import type { QuizStatus } from "@prisma/client";
 export type VerificationStatus = "VERIFIED" | "QUESTIONABLE" | "DISCREPANCY";
 
 /**
- * Effective quiz status (includes computed EXPIRED state)
+ * Effective quiz status (includes runtime-computed states)
+ * - EXPIRED: Link expired before candidate started (PENDING + expiresAt < now)
+ * - TIMED_OUT: Started but ran out of time without submitting (IN_PROGRESS + startedAt + duration < now)
  */
-export type EffectiveQuizStatus = QuizStatus | "EXPIRED";
+export type EffectiveQuizStatus = QuizStatus | "EXPIRED" | "TIMED_OUT";
 
 /**
  * Calculate verification status from correct/total counts
@@ -39,11 +41,11 @@ export function getStandardScore(correct: number, total: number): number {
 }
 
 /**
- * Get the effective quiz status, including computed EXPIRED state
+ * Get the effective quiz status, including runtime-computed states
  *
  * Logic:
  * - If status === PENDING && expiresAt && now > expiresAt → EXPIRED (link expired before start)
- * - If status === IN_PROGRESS && now > startedAt + duration → EXPIRED (time ran out)
+ * - If status === IN_PROGRESS && now > startedAt + duration → TIMED_OUT (started but ran out of time)
  * - Otherwise return stored status
  */
 export function getEffectiveQuizStatus(quiz: {
@@ -59,11 +61,11 @@ export function getEffectiveQuizStatus(quiz: {
     return "EXPIRED";
   }
 
-  // Check if quiz timed out while in progress
+  // Check if quiz timed out while in progress (started but didn't submit before time ran out)
   if (quiz.status === "IN_PROGRESS" && quiz.startedAt) {
     const endTime = new Date(quiz.startedAt.getTime() + quiz.duration * 1000);
     if (now > endTime) {
-      return "EXPIRED";
+      return "TIMED_OUT";
     }
   }
 
@@ -119,43 +121,38 @@ export function getRemainingTime(quiz: {
 }
 
 /**
- * Proctoring status thresholds
+ * Proctoring verdict type
+ */
+export type ProctoringVerdictType = "CLEAN" | "SUSPICIOUS" | "CHEATING";
+
+/**
+ * Proctoring verdict thresholds (evaluated at submission)
+ * CLEAN: 0-2 total violations
+ * SUSPICIOUS: 3-5 total violations
+ * CHEATING: >5 total violations
  */
 const PROCTORING_THRESHOLDS = {
-  SUSPICIOUS: { tabSwitches: 3, fullscreenExits: 2 },
-  FLAGGED: { tabSwitches: 5, fullscreenExits: 4 },
+  SUSPICIOUS: 3,
+  CHEATING: 6,
 } as const;
 
 /**
- * Calculate proctoring status from metadata
- * CLEAN: Below suspicious thresholds
- * SUSPICIOUS: Exceeds suspicious but not flagged thresholds
- * FLAGGED: Exceeds flagged thresholds
+ * Calculate proctoring verdict from events array
+ * Counts total violations and returns verdict based on thresholds
  */
-export function getProctoringStatus(metadata: {
-  tabSwitches?: number;
-  fullscreenExits?: number;
-} | null): "CLEAN" | "SUSPICIOUS" | "FLAGGED" {
-  if (!metadata) return "CLEAN";
+export function getProctoringVerdict(events: { type: string; timestamp: string }[]): {
+  verdict: ProctoringVerdictType;
+  violationCount: number;
+} {
+  const violationCount = events?.length || 0;
 
-  const tabSwitches = metadata.tabSwitches || 0;
-  const fullscreenExits = metadata.fullscreenExits || 0;
-
-  // Check for FLAGGED first
-  if (
-    tabSwitches >= PROCTORING_THRESHOLDS.FLAGGED.tabSwitches ||
-    fullscreenExits >= PROCTORING_THRESHOLDS.FLAGGED.fullscreenExits
-  ) {
-    return "FLAGGED";
+  if (violationCount >= PROCTORING_THRESHOLDS.CHEATING) {
+    return { verdict: "CHEATING", violationCount };
   }
 
-  // Check for SUSPICIOUS
-  if (
-    tabSwitches >= PROCTORING_THRESHOLDS.SUSPICIOUS.tabSwitches ||
-    fullscreenExits >= PROCTORING_THRESHOLDS.SUSPICIOUS.fullscreenExits
-  ) {
-    return "SUSPICIOUS";
+  if (violationCount >= PROCTORING_THRESHOLDS.SUSPICIOUS) {
+    return { verdict: "SUSPICIOUS", violationCount };
   }
 
-  return "CLEAN";
+  return { verdict: "CLEAN", violationCount };
 }

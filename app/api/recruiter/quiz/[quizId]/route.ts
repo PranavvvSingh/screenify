@@ -100,13 +100,8 @@ export async function GET(
 			);
 		}
 
-		// Parse proctoring metadata from Quiz model
-		const proctoringMetadata = quiz.proctoringMetadata as { tabSwitches?: number; fullscreenExits?: number; events?: unknown[] } | null;
-		const proctoringEvents = {
-			tabSwitches: proctoringMetadata?.tabSwitches || 0,
-			fullscreenExits: proctoringMetadata?.fullscreenExits || 0,
-			events: proctoringMetadata?.events || []
-		};
+		// Parse proctoring events from Quiz model
+		const proctoringEvents = (quiz.proctoringEvents as Array<{ type: string; timestamp: string }>) || [];
 
 		// Get effective quiz status (includes computed EXPIRED)
 		const effectiveStatus = getEffectiveQuizStatus({
@@ -141,7 +136,6 @@ export async function GET(
 			createdAt: quiz.createdAt,
 			startedAt: quiz.startedAt,
 			endedAt: quiz.endedAt,
-			proctoringStatus: quiz.proctoringStatus,
 			result: quiz.result
 				? {
 						// Computed values
@@ -152,6 +146,9 @@ export async function GET(
 						standardTotal: quiz.result.standardTotal,
 						verificationCorrect: quiz.result.verificationCorrect,
 						verificationTotal: quiz.result.verificationTotal,
+						// Proctoring verdict
+						proctoringVerdict: quiz.result.proctoringVerdict,
+						proctoringViolationCount: quiz.result.proctoringViolationCount,
 						// Time taken
 						timeTakenSeconds: totalTimeTaken
 					}

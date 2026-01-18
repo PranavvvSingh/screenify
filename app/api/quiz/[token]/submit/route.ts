@@ -6,7 +6,9 @@ import {
   insertQuizResult,
   getQuizResultByQuizId,
   updateQuizResultEvaluated,
+  getQuizProctoringEvents,
 } from "@/lib/db";
+import { getProctoringVerdict } from "@/lib/quiz-helpers";
 
 /**
  * POST /api/quiz/[token]/submit
@@ -23,7 +25,10 @@ export async function POST(
     const { token } = await params;
     const body = await request.json();
 
-    const { timedOut = false, version } = body;
+    const { timedOut = false, version } = body as {
+      timedOut?: boolean;
+      version: number;
+    };
 
     // Validate token
     if (!token || token.length < 10) {
@@ -175,12 +180,19 @@ async function triggerEvaluation(quizId: string, resultId: string) {
       }
     });
 
-    // Update QuizResult with evaluation scores (raw counts only)
+    // Get proctoring events and compute verdict
+    const proctoringEvents = await getQuizProctoringEvents(quizId);
+    const { verdict: proctoringVerdict, violationCount: proctoringViolationCount } =
+      getProctoringVerdict(proctoringEvents);
+
+    // Update QuizResult with evaluation scores and proctoring verdict
     await updateQuizResultEvaluated(resultId, {
       standardCorrect,
       standardTotal,
       verificationCorrect,
       verificationTotal,
+      proctoringVerdict,
+      proctoringViolationCount,
     });
 
     console.log(`Quiz ${quizId} evaluated successfully:`, {
@@ -188,6 +200,8 @@ async function triggerEvaluation(quizId: string, resultId: string) {
       standardTotal,
       verificationCorrect,
       verificationTotal,
+      proctoringVerdict,
+      proctoringViolationCount,
     });
   } catch (error) {
     console.error("Error during evaluation:", error);

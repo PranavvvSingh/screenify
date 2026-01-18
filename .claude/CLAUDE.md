@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 ## Project Overview
-Screenify - AI-assisted candidate screening platform. Recruiters create roles from JDs, upload candidate resumes, and generate unique quiz links. Candidates take assessments without authentication.
+Screenify - AI-assisted candidate screening platform. Recruiters create roles from JDs, upload candidate resumes, and generate unique quiz links. Candidates take proctored assessments without authentication.
 
 ## Tech Stack
 - **Framework**: Next.js 16 (App Router) + TypeScript
@@ -14,64 +14,55 @@ Screenify - AI-assisted candidate screening platform. Recruiters create roles fr
 ## Key Concepts
 
 ### Two-Part Assessment (70/30 Split)
-- **70% Standard Questions**: Generated from JD at role creation, same for all candidates, used for ranking score
-- **30% Verification Questions**: Generated from candidate's resume projects, detects fraud, not scored
+- **70% Standard Questions**: Generated from JD, same for all candidates, used for ranking
+- **30% Verification Questions**: Generated from resume projects, detects fraud, not scored
 
-### Proctoring
-- Time based quiz-environment
-- Anti cheat measures: detect tab change, enforce full screen mode, window not focused, not allowing clipboard copy, detect multiple displays, etc.
+### Quiz Status Lifecycle
+- **DB States**: `PENDING` → `IN_PROGRESS` → `SUBMITTED` | `TERMINATED`
+- **Runtime-computed** (see `lib/quiz-helpers.ts`): `EXPIRED` (link expired before start), `TIMED_OUT` (exceeded duration)
+- Links expire after 48 hours (configurable in `lib/constants.ts`)
 
-### Core Flow
-1. Recruiter creates role → uploads JD PDF → edits extracted requirements → base questions generated
-2. Recruiter adds candidate → uploads resume → verification questions generated → unique quiz link created
-3. Candidate opens link → takes proctored quiz → auto-evaluated → results to recruiter dashboard
+### Proctoring System
+Events tracked via `useProctoring` hook: `TAB_SWITCH`, `FULLSCREEN_EXIT`, `WINDOW_BLUR`, `MULTIPLE_DISPLAYS`
+- Verdict thresholds: CLEAN (0-2), SUSPICIOUS (3-5), CHEATING (6+)
+- Fullscreen enforced with non-dismissible modal on exit
+- Events logged to `proctoringEvents` JSON field on Quiz
+
+### Optimistic Locking
+Quiz uses `version` field to prevent race conditions on concurrent submissions (409 Conflict on mismatch)
 
 ## Database Schema
-See `prisma/schema.prisma`. Key tables: User, Recruiter, JobRole (with baseQuestions), Quiz (with combined questions + token), QuizAnswer, QuizResult (standardScore + verificationStatus)
+See `prisma/schema.prisma`. Key enums: `QuizStatus`, `ProctoringVerdict`, `CandidateStatus`
+Key tables: User, Recruiter, JobRole (baseQuestions), Quiz (questions + token + proctoringEvents + version), QuizResult (standardScore + proctoringVerdict)
 
 ## Project Structure
 ```
 app/
 ├─ api/
-│  ├─ auth/[...all]/route.ts          # Better Auth handlers
-│  ├─ auth-callback/route.ts          # Post-OAuth recruiter creation
-│  ├─ role/
-│  │  ├─ extract-jd/route.ts          # JD text → structured JSON
-│  │  ├─ create/route.ts              # Create role + base questions
-│  │  └─ [roleId]/add-candidate/route.ts  # Upload resume, generate quiz
-│  ├─ quiz/[token]/
-│  │  ├─ route.ts                     # Get quiz info
-│  │  ├─ start/route.ts               # Start quiz attempt
-│  │  ├─ answer/route.ts              # Submit single answer
-│  │  └─ submit/route.ts              # Submit quiz + evaluate
-│  └─ recruiter/
-│     ├─ candidates/route.ts          # List all candidates
-│     └─ quiz/[quizId]/
-│        ├─ route.ts                  # Get quiz results
-│        └─ status/route.ts           # Update candidate status
-├─ recruiter/                         # Recruiter dashboard pages
-│  ├─ page.tsx                        # Dashboard home
-│  ├─ roles/new/page.tsx              # Create role
-│  ├─ roles/[roleId]/page.tsx         # Role details
-│  └─ candidates/page.tsx             # All candidates list
-├─ quiz/[token]/                      # Candidate quiz pages
-│  ├─ page.tsx                        # Quiz invite/start
-│  ├─ take/page.tsx                   # Quiz taking interface
-│  └─ completed/page.tsx              # Thank you page
-lib/                                  # Utilities, AI, DB
-components/                           # UI components
-prisma/schema.prisma                  # Database schema
+│  ├─ auth/                           # Better Auth + callback
+│  ├─ role/                           # extract-jd, create, add-candidate
+│  ├─ quiz/[token]/                   # route, start, answer, submit, proctoring
+│  └─ recruiter/                      # candidates list, quiz results/status
+├─ recruiter/                         # Dashboard pages
+├─ quiz/[token]/                      # Candidate quiz pages (start, take, completed)
+lib/
+├─ db/                                # Prisma client + query functions
+├─ quiz-helpers.ts                    # Status computation, scoring, verdict helpers
+├─ constants.ts                       # Quiz expiry, thresholds
+hooks/
+├─ use-proctoring.ts                  # Real-time proctoring monitoring hook
+components/
+├─ proctoring-warning.tsx             # Fullscreen enforcement modal
 ```
 
 ## Commands
 ```bash
-npm run dev          # Start dev server
-npx prisma studio    # DB GUI
-npx prisma migrate dev  # Run migrations
+npm run dev              # Start dev server
+npx prisma studio        # DB GUI
+npx prisma migrate dev   # Run migrations
 ```
 
 ## Important Notes
 - No candidate authentication - unique token links only
 - PDFs processed client-side, never stored
 - Questions shuffled so candidates can't distinguish verification from standard
-- Proctoring during quiz

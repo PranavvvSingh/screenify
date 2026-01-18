@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
+import { toast } from "sonner";
 
 export default function NewRolePage() {
 	const router = useRouter();
@@ -53,7 +54,7 @@ export default function NewRolePage() {
 
 	const handleImportPDF = async () => {
 		if (!selectedFile) {
-			alert("Please select a PDF file first");
+			toast.error("Please select a PDF file first");
 			return;
 		}
 
@@ -65,7 +66,9 @@ export default function NewRolePage() {
 			const result = await extractTextFromPDF(selectedFile);
 
 			if (result.error) {
-				alert(`Error extracting PDF: ${result.error}`);
+				toast.error("PDF extraction failed", {
+					description: result.error,
+				});
 				return;
 			}
 
@@ -102,7 +105,9 @@ export default function NewRolePage() {
 			console.log("Extracted requirements:", requirements);
 		} catch (error) {
 			console.error("Error processing PDF:", error);
-			alert(`Failed to process PDF: ${error instanceof Error ? error.message : "Unknown error"}`);
+			toast.error("Failed to process PDF", {
+				description: error instanceof Error ? error.message : "Unknown error",
+			});
 		} finally {
 			setIsExtracting(false);
 		}
@@ -112,7 +117,7 @@ export default function NewRolePage() {
 		e.preventDefault();
 
 		if (!isFormValid) {
-			alert("Please fill in all required fields");
+			toast.error("Please fill in all required fields");
 			return;
 		}
 
@@ -150,20 +155,17 @@ export default function NewRolePage() {
 
 			console.log("Role created successfully");
 
-			// Show success message
-			alert(
-				`Role created successfully!\n\n` +
-				`Title: ${role.title}\n` +
-				`Total Questions: ${role.totalQuestions}\n` +
-				`Base Questions Generated: ${role.baseQuestionsCount}\n\n` +
-				`Redirecting to role overview...`
-			);
+			toast.success("Role created successfully", {
+				description: `${role.title} with ${role.baseQuestionsCount} questions generated`,
+			});
 
 			// Redirect to role overview page
 			router.push(`/recruiter/roles/${role.id}`);
 		} catch (error) {
 			console.error("Error creating role:", error);
-			alert(`Failed to create role: ${error instanceof Error ? error.message : "Unknown error"}`);
+			toast.error("Failed to create role", {
+				description: error instanceof Error ? error.message : "Unknown error",
+			});
 		} finally {
 			setIsCreating(false);
 		}

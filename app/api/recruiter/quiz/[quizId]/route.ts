@@ -49,8 +49,7 @@ export async function GET(
 			type: "STANDARD" | "RESUME_VERIFICATION";
 			question: string;
 			options: string[];
-			correctAnswer?: number;
-			correct_answer?: number;
+			correctAnswer: number;
 		}>;
 		const standardQuestions = questions.filter((q) => q.type === "STANDARD");
 		const verificationQuestions = questions.filter((q) => q.type === "RESUME_VERIFICATION");
@@ -63,14 +62,13 @@ export async function GET(
 		// Build verification details
 		const verificationDetails = verificationQuestions.map((question) => {
 			const answer = answersMap.get(question.id);
-			const correctAnswerIndex = question.correctAnswer ?? question.correct_answer;
 			const candidateAnswerIndex = answer ? parseInt(answer.answer) : null;
 
 			return {
 				questionId: question.id,
 				question: question.question,
 				options: question.options,
-				correctAnswer: correctAnswerIndex ?? null,
+				correctAnswer: question.correctAnswer,
 				candidateAnswer: candidateAnswerIndex,
 				timeTaken: answer?.timeTaken || 0
 			};
@@ -79,14 +77,13 @@ export async function GET(
 		// Build standard questions details
 		const standardDetails = standardQuestions.map((question) => {
 			const answer = answersMap.get(question.id);
-			const correctAnswerIndex = question.correctAnswer ?? question.correct_answer;
 			const candidateAnswerIndex = answer ? parseInt(answer.answer) : null;
 
 			return {
 				questionId: question.id,
 				question: question.question,
 				options: question.options,
-				correctAnswer: correctAnswerIndex ?? null,
+				correctAnswer: question.correctAnswer,
 				candidateAnswer: candidateAnswerIndex,
 				timeTaken: answer?.timeTaken || 0
 			};

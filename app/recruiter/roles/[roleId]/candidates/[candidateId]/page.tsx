@@ -94,6 +94,7 @@ export default function CandidateDetailPage() {
 			}
 			const data: QuizDetails = await response.json();
 			setQuiz(data);
+			console.log(data);
 		} catch (err) {
 			setError("Failed to load candidate details");
 			console.error("Error fetching quiz details:", err);
@@ -316,7 +317,7 @@ export default function CandidateDetailPage() {
 									{result.timeTakenSeconds !== null && (
 									<div className='text-center p-4 bg-muted/50 rounded-lg'>
 										<p className='text-2xl font-bold'>
-											{formatTime(result.timeTakenSeconds)} <span className='text-gray-500'>out of</span> {quiz.duration} minutes
+											{formatTime(result.timeTakenSeconds)} <span className='text-gray-500'>out of</span> {Math.round(quiz.duration / 60)} minutes
 										</p>
 										<p className='text-sm text-muted-foreground mt-1'>Time Taken & Duration</p>
 									</div>
@@ -586,7 +587,7 @@ export default function CandidateDetailPage() {
 							<Separator />
 							<div className='flex justify-between'>
 								<span className='text-muted-foreground'>Duration</span>
-								<span className='font-semibold'>{quiz.duration} minutes</span>
+								<span className='font-semibold'>{Math.round(quiz.duration / 60)} minutes</span>
 							</div>
 							<div className='flex justify-between'>
 								<span className='text-muted-foreground'>Status</span>

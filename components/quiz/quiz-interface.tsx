@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -39,7 +39,7 @@ interface QuizInterfaceProps {
 export function QuizInterface({ questions, quizToken, initialVersion, onSubmit, onTimePerQuestionChange, onQuestionChange, onQuizEnded }: QuizInterfaceProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [questionStartTimes, setQuestionStartTimes] = useState<Record<string, number>>({});
+  const questionStartTimesRef = useRef<Record<string, number>>({});
   const [questionTimeTaken, setQuestionTimeTaken] = useState<Record<string, number>>({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
@@ -60,22 +60,19 @@ export function QuizInterface({ questions, quizToken, initialVersion, onSubmit, 
   // Track time when entering a new question
   useEffect(() => {
     const questionId = currentQuestion?.id;
-    if (questionId && !questionStartTimes[questionId]) {
-      setQuestionStartTimes((prev) => ({
-        ...prev,
-        [questionId]: Date.now(),
-      }));
+    if (questionId && !questionStartTimesRef.current[questionId]) {
+      questionStartTimesRef.current[questionId] = Date.now();
     }
 
     // Notify parent of question change
     if (onQuestionChange) {
       onQuestionChange(currentQuestionIndex);
     }
-  }, [currentQuestionIndex, currentQuestion?.id, questionStartTimes, onQuestionChange]);
+  }, [currentQuestionIndex, currentQuestion?.id, onQuestionChange]);
 
 
   // Save answer to backend with throttling and optimistic locking
-  const saveAnswerToBackend = async (questionId: string, answer: number, timeTaken: number) => {
+  const saveAnswerToBackend = useCallback(async (questionId: string, answer: number, timeTaken: number) => {
     const now = Date.now();
     const lastSaveTime = lastSaveTimeRef.current[questionId] || 0;
 
@@ -118,25 +115,28 @@ export function QuizInterface({ questions, quizToken, initialVersion, onSubmit, 
     } catch (error) {
       console.error("Error saving answer:", error);
     }
-  };
+  }, [quizToken, onQuizEnded]);
 
   // Calculate time spent on question when leaving it
-  const recordTimeForCurrentQuestion = () => {
-    const questionId = currentQuestion?.id;
-    if (questionId && questionStartTimes[questionId] && !questionTimeTaken[questionId]) {
-      const timeTaken = Math.floor((Date.now() - questionStartTimes[questionId]) / 1000);
-      setQuestionTimeTaken((prev) => ({
-        ...prev,
-        [questionId]: timeTaken,
-      }));
+  const recordTimeForCurrentQuestion = useCallback(() => {
+    const questionId = currentQuestion.id;
+    if (questionStartTimesRef.current[questionId]) {
+      setQuestionTimeTaken((prev) => {
+        // Skip if already recorded
+        if (prev[questionId]) return prev;
 
-      if (onTimePerQuestionChange) {
-        onTimePerQuestionChange(questionId, timeTaken);
-      }
+        const timeTaken = Math.floor((Date.now() - questionStartTimesRef.current[questionId]) / 1000);
+
+        if (onTimePerQuestionChange) {
+          onTimePerQuestionChange(questionId, timeTaken);
+        }
+
+        return { ...prev, [questionId]: timeTaken };
+      });
     }
-  };
+  }, [currentQuestion.id, onTimePerQuestionChange]);
 
-  const handleAnswerChange = (value: string) => {
+  const handleAnswerChange = useCallback((value: string) => {
     const answerIndex = parseInt(value);
 
     // Update local state immediately for UI responsiveness (optimistic UI)
@@ -147,13 +147,14 @@ export function QuizInterface({ questions, quizToken, initialVersion, onSubmit, 
 
     // Calculate time taken for this question so far
     const questionId = currentQuestion.id;
-    const timeTaken = questionStartTimes[questionId]
-      ? Math.floor((Date.now() - questionStartTimes[questionId]) / 1000)
+    const startTime = questionStartTimesRef.current[questionId];
+    const timeTaken = startTime
+      ? Math.floor((Date.now() - startTime) / 1000)
       : 0;
 
     // Save to backend (throttled - first click saves immediately, subsequent clicks within 500ms are ignored)
     saveAnswerToBackend(questionId, answerIndex, timeTaken);
-  };
+  }, [currentQuestion.id, saveAnswerToBackend]);
 
   const handleNext = () => {
     recordTimeForCurrentQuestion();

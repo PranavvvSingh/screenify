@@ -42,7 +42,7 @@ async function test() {
       console.log(`Question ${idx + 1}:`);
       console.log(`  Q: ${q.question}`);
       console.log(`  Options:`, q.options);
-      console.log(`  Correct answer index: ${q.correct_answer}`);
+      console.log(`  Correct answer index: ${q.correctAnswer}`);
       console.log();
     });
   } catch (error) {

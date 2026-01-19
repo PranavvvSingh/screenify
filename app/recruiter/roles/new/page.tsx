@@ -155,9 +155,7 @@ export default function NewRolePage() {
 
 			console.log("Role created successfully");
 
-			toast.success("Role created successfully", {
-				description: `${role.title} with ${role.baseQuestionsCount} questions generated`,
-			});
+			toast.success("Job Role created");
 
 			// Redirect to role overview page
 			router.push(`/recruiter/roles/${role.id}`);

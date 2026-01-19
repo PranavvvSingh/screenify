@@ -63,7 +63,7 @@ export default function QuizTakePage() {
   }, []);
 
   // Initialize proctoring hook
-  const { isFullscreen, requestFullscreen } = useProctoring({
+  const { isFullscreen, requestFullscreen, exitFullscreen } = useProctoring({
     quizToken: token,
     enabled: !!quizSession && !submitting,
     onFullscreenExit: handleFullscreenExit,
@@ -153,6 +153,9 @@ export default function QuizTakePage() {
         return;
       }
 
+      // Exit fullscreen mode now that quiz is submitted
+      await exitFullscreen();
+
       // Redirect to completed page with timeout flag
       router.push(`/quiz/${token}/completed?timedOut=true`);
     } catch (error) {
@@ -161,7 +164,7 @@ export default function QuizTakePage() {
         description: "Please contact support.",
       });
     }
-  }, [token, currentVersion, router]);
+  }, [token, currentVersion, router, exitFullscreen]);
 
   const handleSubmit = async (version: number) => {
     // Guard against double submission
@@ -192,6 +195,9 @@ export default function QuizTakePage() {
         const data = await response.json();
         throw new Error(data.error || "Failed to submit quiz");
       }
+
+      // Exit fullscreen mode now that quiz is submitted
+      await exitFullscreen();
 
       // Show success message
       toast.success("Assessment submitted successfully!", {

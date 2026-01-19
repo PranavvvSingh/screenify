@@ -111,9 +111,10 @@ export function CandidateList({ roleId, initialTotal = 0 }: CandidateListProps) 
     }
   }, [roleId, buildQueryString]);
 
+  // Re-fetch when initialTotal changes (e.g., after router.refresh() when a candidate is added)
   useEffect(() => {
     fetchCandidates();
-  }, [fetchCandidates]);
+  }, [fetchCandidates, initialTotal]);
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     setCurrentPage(1);

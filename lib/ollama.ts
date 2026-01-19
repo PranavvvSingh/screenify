@@ -148,13 +148,13 @@ export async function generateStandardQuestions(
       correct_answer: number;
     }>>(response.response);
 
-    // Transform to Question type with unique IDs
+    // Transform to Question type with unique IDs (convert snake_case to camelCase)
     return questions.map((q, idx) => ({
       id: `std_${Date.now()}_${idx}`,
       type: 'STANDARD' as const,
       question: q.question,
       options: q.options,
-      correct_answer: q.correct_answer,
+      correctAnswer: q.correct_answer,
     }));
   });
 }
@@ -189,13 +189,13 @@ export async function generateVerificationQuestions(
       correct_answer: number;
     }>>(response.response);
 
-    // Transform to Question type with unique IDs
+    // Transform to Question type with unique IDs (convert snake_case to camelCase)
     return questions.map((q, idx) => ({
       id: `ver_${Date.now()}_${idx}`,
       type: 'RESUME_VERIFICATION' as const,
       question: q.question,
       options: q.options,
-      correct_answer: q.correct_answer,
+      correctAnswer: q.correct_answer,
     }));
   });
 }

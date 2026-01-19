@@ -37,7 +37,7 @@ export interface Question {
   type: QuestionType;
   question: string;
   options: string[];
-  correct_answer: number; // Index of the correct option (0, 1, 2, or 3)
+  correctAnswer: number; // Index of the correct option (0, 1, 2, or 3)
 }
 
 // Quiz Generation Types

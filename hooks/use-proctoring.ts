@@ -104,33 +104,17 @@ export function useProctoring({
     }
   }, []);
 
-  // Check for multiple displays
-  const checkMultipleDisplays = useCallback(async (): Promise<boolean> => {
+  // Check for multiple displays using screen.isExtended (no permission required)
+  const checkMultipleDisplays = useCallback((): boolean => {
     try {
-      // Check if screen is extended (basic check)
+      // screen.isExtended is true when the screen is part of a multi-screen setup
+      // This doesn't require user permission unlike getScreenDetails()
       if (
         "isExtended" in window.screen &&
         (window.screen as { isExtended?: boolean }).isExtended
       ) {
         return true;
       }
-
-      // Try to get detailed screen info (modern browsers)
-      if ("getScreenDetails" in window) {
-        try {
-          const screenDetails = await (
-            window as Window & {
-              getScreenDetails: () => Promise<{ screens: unknown[] }>;
-            }
-          ).getScreenDetails();
-          if (screenDetails.screens.length > 1) {
-            return true;
-          }
-        } catch {
-          // User denied permission or API not available
-        }
-      }
-
       return false;
     } catch {
       return false;
@@ -207,8 +191,8 @@ export function useProctoring({
     if (!enabled || hasInitializedRef.current) return;
     hasInitializedRef.current = true;
 
-    const checkDisplays = async () => {
-      const hasMultiple = await checkMultipleDisplays();
+    const checkDisplays = () => {
+      const hasMultiple = checkMultipleDisplays();
       if (hasMultiple) {
         sendEvent("MULTIPLE_DISPLAYS");
       }
@@ -218,8 +202,8 @@ export function useProctoring({
     checkDisplays();
 
     // Periodic check every 30 seconds
-    displayCheckIntervalRef.current = setInterval(async () => {
-      const hasMultiple = await checkMultipleDisplays();
+    displayCheckIntervalRef.current = setInterval(() => {
+      const hasMultiple = checkMultipleDisplays();
       if (hasMultiple) {
         sendEvent("MULTIPLE_DISPLAYS");
       }

@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:studio": "PRISMA_SSL=1 npx prisma studio",
+    "db:migrate": "npx prisma migrate dev",
+    "db:push": "npx prisma db push"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

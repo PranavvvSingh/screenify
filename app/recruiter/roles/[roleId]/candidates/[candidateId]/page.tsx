@@ -286,42 +286,68 @@ export default function CandidateDetailPage() {
 				{/* Left Column - Main Content */}
 				<div className='lg:col-span-2 space-y-6'>
 					{/* Assessment Summary */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Assessment Summary</CardTitle>
-							<CardDescription>
-								{hasResult ? "Quiz performance breakdown" : "Assessment not yet completed"}
-							</CardDescription>
+					<Card className="overflow-hidden">
+						<CardHeader className="pb-4">
+							<div className="flex items-start justify-between gap-4">
+								<div>
+									<CardTitle>Assessment Summary</CardTitle>
+									<CardDescription className="mt-1">
+										{hasResult ? "Quiz performance breakdown" : "Assessment not yet completed"}
+									</CardDescription>
+								</div>
+								<Badge
+									variant={quiz.status === "SUBMITTED" || quiz.status === "TERMINATED" ? "default" : "secondary"}
+									className={`shrink-0 px-4 py-1.5 text-sm font-semibold rounded-lg shadow-sm ${
+										quiz.status === "SUBMITTED" || quiz.status === "TERMINATED"
+											? "bg-emerald-600 hover:bg-emerald-700 text-white"
+											: quiz.status === "IN_PROGRESS"
+											? "bg-amber-500 hover:bg-amber-600 text-white"
+											: quiz.status === "EXPIRED"
+											? "bg-slate-500 hover:bg-slate-600 text-white"
+											: ""
+									}`}
+								>
+									{quiz.status === "SUBMITTED" || quiz.status === "TERMINATED"
+										? "Completed"
+										: quiz.status === "IN_PROGRESS"
+										? "In Progress"
+										: quiz.status === "EXPIRED"
+										? "Expired"
+										: "Pending"}
+								</Badge>
+							</div>
 						</CardHeader>
 						<CardContent>
 							{hasResult && result && result.standardScore !== null ? (
-								<div className='space-y-6'>
-									<div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
-										<div className='text-center p-4 bg-muted/50 rounded-lg'>
-											<p className='text-3xl font-bold text-primary'>{result.standardScore.toFixed(1)}%</p>
-											<p className='text-sm text-muted-foreground mt-1'>Ranking Score</p>
+								<div className='space-y-4'>
+									<div className='grid grid-cols-3 gap-3'>
+										<div className='text-center p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/10'>
+											<p className='text-3xl font-bold text-primary tracking-tight'>{result.standardScore.toFixed(1)}%</p>
+											<p className='text-xs text-muted-foreground mt-1.5 font-medium'>Ranking Score</p>
 										</div>
-										<div className='text-center p-4 bg-muted/50 rounded-lg'>
-											<p className='text-3xl font-bold'>
-												{result.standardCorrect}/{result.standardTotal}
+										<div className='text-center p-4 bg-muted/40 rounded-xl border border-border/50'>
+											<p className='text-3xl font-bold tracking-tight'>
+												{result.standardCorrect}<span className="text-muted-foreground/60">/{result.standardTotal}</span>
 											</p>
-											<p className='text-sm text-muted-foreground mt-1'>Standard Q&apos;s</p>
+											<p className='text-xs text-muted-foreground mt-1.5 font-medium'>Standard Q&apos;s</p>
 										</div>
-										<div className='text-center p-4 bg-muted/50 rounded-lg'>
-											<p className='text-3xl font-bold'>
-												{result.verificationCorrect}/{result.verificationTotal}
+										<div className='text-center p-4 bg-muted/40 rounded-xl border border-border/50'>
+											<p className='text-3xl font-bold tracking-tight'>
+												{result.verificationCorrect}<span className="text-muted-foreground/60">/{result.verificationTotal}</span>
 											</p>
-											<p className='text-sm text-muted-foreground mt-1'>Verification Q&apos;s</p>
+											<p className='text-xs text-muted-foreground mt-1.5 font-medium'>Verification Q&apos;s</p>
 										</div>
 									</div>
 									{result.timeTakenSeconds !== null && (
-									<div className='text-center p-4 bg-muted/50 rounded-lg'>
-										<p className='text-2xl font-bold'>
-											{formatTime(result.timeTakenSeconds)} <span className='text-gray-500'>out of</span> {Math.round(quiz.duration / 60)} minutes
-										</p>
-										<p className='text-sm text-muted-foreground mt-1'>Time Taken & Duration</p>
-									</div>
-								)}
+										<div className='flex items-center justify-center gap-3 p-4 bg-muted/30 rounded-xl border border-border/30'>
+											<Clock className="w-5 h-5 text-muted-foreground" />
+											<p className='text-lg font-semibold'>
+												{formatTime(result.timeTakenSeconds)}
+												<span className='text-muted-foreground font-normal mx-2'>of</span>
+												{Math.round(quiz.duration / 60)} min
+											</p>
+										</div>
+									)}
 								</div>
 							) : (
 								<div className='text-center py-8 text-muted-foreground'>
@@ -566,43 +592,6 @@ export default function CandidateDetailPage() {
 						</CardContent>
 					</Card>
 
-					{/* Quiz Info */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Quiz Information</CardTitle>
-						</CardHeader>
-						<CardContent className='space-y-3 text-sm'>
-							<div className='flex justify-between'>
-								<span className='text-muted-foreground'>Total Questions</span>
-								<span className='font-semibold'>{quiz.totalQuestions}</span>
-							</div>
-							<div className='flex justify-between'>
-								<span className='text-muted-foreground'>Standard Questions</span>
-								<span className='font-semibold'>{quiz.standardQuestionsCount}</span>
-							</div>
-							<div className='flex justify-between'>
-								<span className='text-muted-foreground'>Verification Questions</span>
-								<span className='font-semibold'>{quiz.verificationQuestionsCount}</span>
-							</div>
-							<Separator />
-							<div className='flex justify-between'>
-								<span className='text-muted-foreground'>Duration</span>
-								<span className='font-semibold'>{Math.round(quiz.duration / 60)} minutes</span>
-							</div>
-							<div className='flex justify-between'>
-								<span className='text-muted-foreground'>Status</span>
-								<Badge variant={quiz.status === "SUBMITTED" || quiz.status === "TERMINATED" ? "default" : "secondary"}>
-									{quiz.status === "SUBMITTED" || quiz.status === "TERMINATED"
-										? "Completed"
-										: quiz.status === "IN_PROGRESS"
-										? "In Progress"
-										: quiz.status === "EXPIRED"
-										? "Expired"
-										: "Pending"}
-								</Badge>
-							</div>
-						</CardContent>
-					</Card>
 				</div>
 			</div>
 		</div>

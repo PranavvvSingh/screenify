@@ -52,12 +52,13 @@ export default function QuizTakePage() {
     setShowFullscreenModal(true);
   }, []);
 
-  // Handle proctoring violation - show toast for non-fullscreen violations
+  // Handle proctoring violation - only show toast in development for testing
   const handleViolation = useCallback((event: ProctoringEvent) => {
-    // For non-fullscreen violations, show a toast
-    if (event.type !== "FULLSCREEN_EXIT") {
-      toast.warning("Suspicious activity recorded", {
-        description: "This activity has been logged and will be visible to the recruiter.",
+    // In production: silently track violations (already sent to server by useProctoring hook)
+    // In development: show toast for easier testing/debugging
+    if (process.env.NODE_ENV === "development" && event.type !== "FULLSCREEN_EXIT") {
+      toast.warning(`[DEV] Violation: ${event.type}`, {
+        description: "This toast only shows in development mode.",
       });
     }
   }, []);

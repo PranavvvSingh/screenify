@@ -222,7 +222,7 @@ export function QuizInterface({ questions, quizToken, initialVersion, onSubmit, 
             </h2>
 
             <RadioGroup
-              value={answers[currentQuestion.id] !== undefined ? answers[currentQuestion.id].toString() : undefined}
+              value={answers[currentQuestion.id] !== undefined ? answers[currentQuestion.id].toString() : ""}
               onValueChange={handleAnswerChange}
               className="space-y-3"
             >

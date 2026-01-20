@@ -319,20 +319,9 @@ export function CandidateList({ roleId, initialTotal = 0 }: CandidateListProps) 
 
           <div className="w-px h-5 bg-border/60" />
 
-          <Select
-            value={filters.sortBy}
-            onValueChange={(value) => handleFilterChange("sortBy", value)}
-          >
-            <SelectTrigger className="h-9 w-auto min-w-[110px] gap-2 text-sm border-border/60">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="score">Score</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="createdAt">Date Added</SelectItem>
-              <SelectItem value="completedAt">Completed</SelectItem>
-            </SelectContent>
-          </Select>
+          <span className="text-sm text-muted-foreground">
+            {filters.sortOrder === "desc" ? "Highest score" : "Lowest score"}
+          </span>
 
           <Button
             variant="outline"
@@ -377,14 +366,20 @@ export function CandidateList({ roleId, initialTotal = 0 }: CandidateListProps) 
             return (
               <div
                 key={quiz.id}
-                className="group relative bg-background border border-border/60 rounded-xl p-5 hover:border-border hover:shadow-soft-md transition-all duration-200"
+                className={`group relative bg-background border rounded-xl p-3 hover:shadow-soft-md transition-all duration-200 ${
+                  quiz.candidateStatus === "SHORTLISTED"
+                    ? "border-emerald-500/40 hover:border-emerald-500/60"
+                    : quiz.candidateStatus === "REJECTED"
+                    ? "border-red-500/40 hover:border-red-500/60"
+                    : "border-border/60 hover:border-border"
+                }`}
                 style={{ animationDelay: `${index * 30}ms` }}
               >
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-4">
                   {/* Avatar & Info */}
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-primary">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-semibold text-primary">
                         {quiz.candidateName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
                       </span>
                     </div>
@@ -395,25 +390,25 @@ export function CandidateList({ roleId, initialTotal = 0 }: CandidateListProps) 
                   </div>
 
                   {/* Status Badges */}
-                  <div className="flex items-center gap-2.5 flex-shrink-0">
-                    <Badge variant="outline" className={`${statusConfig.className} border font-medium text-xs px-2.5 py-1`}>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge variant="outline" className={`${statusConfig.className} border font-medium text-xs px-2 py-0.5`}>
                       {statusConfig.label}
                     </Badge>
                     {verificationConfig && (
-                      <Badge variant="outline" className={`${verificationConfig.className} border font-medium text-xs px-2.5 py-1`}>
+                      <Badge variant="outline" className={`${verificationConfig.className} border font-medium text-xs px-2 py-0.5`}>
                         {verificationConfig.label}
                       </Badge>
                     )}
                   </div>
 
                   {/* Score */}
-                  <div className="w-20 flex-shrink-0 text-center">
+                  <div className="w-16 flex-shrink-0 text-center">
                     {quiz.result?.standardScore !== null && quiz.result?.standardScore !== undefined ? (
                       <div>
-                        <span className="text-2xl font-bold text-foreground tabular-nums">
+                        <span className="text-xl font-bold text-foreground tabular-nums">
                           {quiz.result.standardScore.toFixed(0)}
                         </span>
-                        <span className="text-sm font-medium text-muted-foreground">%</span>
+                        <span className="text-xs font-medium text-muted-foreground">%</span>
                       </div>
                     ) : (
                       <span className="text-sm text-muted-foreground">—</span>

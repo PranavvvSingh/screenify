@@ -205,7 +205,7 @@ export function RolesList() {
             const completedCount = role.quizzes.filter((q) => q.status === "SUBMITTED" || q.status === "TERMINATED").length;
 
             return (
-              <Link key={role.id} href={`/recruiter/roles/${role.id}`}>
+              <Link key={role.id} href={`/recruiter/roles/${role.id}`} className="block">
                 <div className="p-4 rounded-xl border border-border hover:border-primary/30 hover:shadow-soft-sm transition-all cursor-pointer group">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">

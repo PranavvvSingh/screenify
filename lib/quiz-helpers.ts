@@ -1,4 +1,5 @@
 import type { QuizStatus } from "@prisma/client";
+import { PROCTORING_SESSION_GAP_MS } from "./constants";
 
 /**
  * Verification status thresholds and types
@@ -138,13 +139,50 @@ const PROCTORING_THRESHOLDS = {
 
 /**
  * Calculate proctoring verdict from events array
- * Counts total violations and returns verdict based on thresholds
+ *
+ * Uses session-based scoring:
+ * - Events within PROCTORING_SESSION_GAP_MS of each other are grouped into one "away session"
+ * - Each away session counts as 1 violation (not N raw events)
+ * - MULTIPLE_DISPLAYS events always count individually (not session-grouped)
+ *
+ * This prevents inflated violation counts when a single "leave and return"
+ * action triggers multiple rapid events (e.g., WINDOW_BLUR + TAB_SWITCH + FULLSCREEN_EXIT)
  */
 export function getProctoringVerdict(events: { type: string; timestamp: string }[]): {
   verdict: ProctoringVerdictType;
   violationCount: number;
 } {
-  const violationCount = events?.length || 0;
+  if (!events || events.length === 0) {
+    return { verdict: "CLEAN", violationCount: 0 };
+  }
+
+  // MULTIPLE_DISPLAYS is a persistent state detection, not a "leave and return" pattern
+  // Count these separately and don't group them into sessions
+  const displayEvents = events.filter((e) => e.type === "MULTIPLE_DISPLAYS");
+  const otherEvents = events.filter((e) => e.type !== "MULTIPLE_DISPLAYS");
+
+  // Sort non-display events by timestamp
+  const sorted = [...otherEvents].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+
+  // Count "away sessions" - groups of events within SESSION_GAP_MS of each other
+  let sessionCount = 0;
+  let lastEventTime: number | null = null;
+
+  for (const event of sorted) {
+    const eventTime = new Date(event.timestamp).getTime();
+
+    // If this is the first event OR gap since last event exceeds threshold, it's a new session
+    if (lastEventTime === null || eventTime - lastEventTime > PROCTORING_SESSION_GAP_MS) {
+      sessionCount++;
+    }
+
+    lastEventTime = eventTime;
+  }
+
+  // Total violations = away sessions + display detections
+  const violationCount = sessionCount + displayEvents.length;
 
   if (violationCount >= PROCTORING_THRESHOLDS.CHEATING) {
     return { verdict: "CHEATING", violationCount };

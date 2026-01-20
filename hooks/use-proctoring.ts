@@ -28,13 +28,18 @@ interface UseProctoringReturn {
 
 const DISPLAY_CHECK_INTERVAL = 30000; // Check for multiple displays every 30s
 
+// Helper to safely check fullscreen state (works during SSR)
+const getFullscreenState = () =>
+  typeof document !== "undefined" && !!document.fullscreenElement;
+
 export function useProctoring({
   quizToken,
   enabled = true,
   onFullscreenExit,
   onViolation,
 }: UseProctoringOptions): UseProctoringReturn {
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(getFullscreenState);
+  const wasFullscreenRef = useRef(getFullscreenState());
   const hasInitializedRef = useRef(false);
   const displayCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -162,20 +167,18 @@ export function useProctoring({
       const isNowFullscreen = !!document.fullscreenElement;
 
       // Only log exit if we were in fullscreen before and now we're not
-      if (isFullscreen && !isNowFullscreen) {
+      if (wasFullscreenRef.current && !isNowFullscreen) {
         sendEvent("FULLSCREEN_EXIT");
         onFullscreenExit?.();
       }
 
+      wasFullscreenRef.current = isNowFullscreen;
       setIsFullscreen(isNowFullscreen);
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     // Safari support
     document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
-
-    // Set initial fullscreen state
-    setIsFullscreen(!!document.fullscreenElement);
 
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
@@ -184,7 +187,7 @@ export function useProctoring({
         handleFullscreenChange
       );
     };
-  }, [enabled, isFullscreen, sendEvent, onFullscreenExit]);
+  }, [enabled, sendEvent, onFullscreenExit]);
 
   // Check for multiple displays on mount and periodically
   useEffect(() => {

@@ -32,6 +32,10 @@ const pool = new Pool({
     rejectUnauthorized: true,
     ca: getCaCertificate(),
   },
+  // Connection pool settings to prevent transaction timeout errors
+  max: 10, // Maximum number of connections in the pool
+  idleTimeoutMillis: 30000, // Close idle connections after 30s
+  connectionTimeoutMillis: 10000, // Fail connection after 10s
 });
 const adapter = new PrismaPg(pool);
 
@@ -40,6 +44,10 @@ export const prisma =
   new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    transactionOptions: {
+      maxWait: 10000, // Max time to acquire a connection (10s)
+      timeout: 30000, // Max transaction duration (30s)
+    },
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

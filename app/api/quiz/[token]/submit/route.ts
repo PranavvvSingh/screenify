@@ -164,7 +164,7 @@ async function triggerEvaluation(quizId: string, resultId: string) {
     const standardTotal = standardQuestions.length;
 
     standardQuestions.forEach((question) => {
-      const answer = quiz.answers.find((a) => a.questionId === question.id);
+      const answer = quiz.answers.find((a: { questionId: string; isCorrect: boolean }) => a.questionId === question.id);
       if (answer?.isCorrect) {
         standardCorrect++;
       }
@@ -175,7 +175,7 @@ async function triggerEvaluation(quizId: string, resultId: string) {
     const verificationTotal = verificationQuestions.length;
 
     verificationQuestions.forEach((question) => {
-      const answer = quiz.answers.find((a) => a.questionId === question.id);
+      const answer = quiz.answers.find((a: { questionId: string; isCorrect: boolean }) => a.questionId === question.id);
       if (answer?.isCorrect) {
         verificationCorrect++;
       }

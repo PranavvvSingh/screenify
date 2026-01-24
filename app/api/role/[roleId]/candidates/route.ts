@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getQuizzesByRole, type QuizFilters } from "@/lib/db";
-import { getStandardScore, getVerificationStatus } from "@/lib/quiz-helpers";
+import { getStandardScore, getVerificationStatus, getEffectiveQuizStatus } from "@/lib/quiz-helpers";
 
 export async function GET(
 	request: NextRequest,
@@ -80,13 +80,21 @@ export async function GET(
 				? getVerificationStatus(quiz.result.verificationCorrect, quiz.result.verificationTotal)
 				: null;
 
+			// Compute effective status (includes EXPIRED, TIMED_OUT)
+			const effectiveStatus = getEffectiveQuizStatus({
+				status: quiz.status,
+				expiresAt: quiz.expiresAt,
+				startedAt: quiz.startedAt,
+				duration: quiz.duration,
+			});
+
 			return {
 				id: quiz.id,
 				candidateName: quiz.candidateName,
 				candidateEmail: quiz.candidateEmail,
 				candidateStatus: quiz.candidateStatus,
 				token: quiz.token,
-				status: quiz.status,
+				status: effectiveStatus,
 				createdAt: quiz.createdAt,
 				result: quiz.result
 					? {

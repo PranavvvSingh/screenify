@@ -11,25 +11,66 @@ export default function Icon() {
     (
       <div
         style={{
-          fontSize: 24,
-          background: "linear-gradient(135deg, #E07A5F 0%, #C45A3B 100%)",
           width: "100%",
           height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          borderRadius: 6,
+          background: "linear-gradient(145deg, #C45C3B 0%, #9A3A20 100%)",
+          borderRadius: 7,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <span
+        {/* Subtle inner glow */}
+        <div
           style={{
-            color: "white",
-            fontWeight: 700,
-            fontFamily: "system-ui, sans-serif",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background:
+              "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.25) 0%, transparent 50%)",
+          }}
+        />
+        {/* Screening layers - three horizontal bars with decreasing opacity */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+            alignItems: "center",
           }}
         >
-          S
-        </span>
+          {/* Top bar - full width */}
+          <div
+            style={{
+              width: 18,
+              height: 4,
+              background: "rgba(255,255,255,0.95)",
+              borderRadius: 2,
+            }}
+          />
+          {/* Middle bar - medium width */}
+          <div
+            style={{
+              width: 14,
+              height: 4,
+              background: "rgba(255,255,255,0.75)",
+              borderRadius: 2,
+            }}
+          />
+          {/* Bottom bar - narrowest (filtered result) */}
+          <div
+            style={{
+              width: 8,
+              height: 4,
+              background: "rgba(255,255,255,0.55)",
+              borderRadius: 2,
+            }}
+          />
+        </div>
       </div>
     ),
     {

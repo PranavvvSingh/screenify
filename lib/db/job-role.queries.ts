@@ -165,6 +165,9 @@ export async function getQuizzesByRole(
         candidateStatus: true,
         token: true,
         status: true,
+        expiresAt: true,
+        startedAt: true,
+        duration: true,
         endedAt: true,
         createdAt: true,
         result: {

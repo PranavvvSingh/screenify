@@ -32,9 +32,10 @@ const pool = new Pool({
     rejectUnauthorized: true,
     ca: getCaCertificate(),
   },
-  // Connection pool settings to prevent transaction timeout errors
-  max: 10, // Maximum number of connections in the pool
-  idleTimeoutMillis: 30000, // Close idle connections after 30s
+  // Connection pool settings optimized for serverless (Vercel) + Aiven cloud DB
+  // Keep pool small since each serverless instance creates its own pool
+  max: 2, // Small pool per instance to avoid exceeding Aiven's connection limit
+  idleTimeoutMillis: 10000, // Close idle connections quickly (10s)
   connectionTimeoutMillis: 10000, // Fail connection after 10s
 });
 const adapter = new PrismaPg(pool);

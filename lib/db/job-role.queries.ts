@@ -155,7 +155,8 @@ export async function getQuizzesByRole(
     }
   }
 
-  const [quizzes, total] = await prisma.$transaction([
+  // Use Promise.all instead of $transaction for read-only queries (better for cloud DBs with latency)
+  const [quizzes, total] = await Promise.all([
     prisma.quiz.findMany({
       where,
       select: {
@@ -252,7 +253,8 @@ export async function getJobRolesPaginated(
   const sortOrder = filters.sortOrder || "desc";
   const orderBy: Prisma.JobRoleOrderByWithRelationInput = { createdAt: sortOrder };
 
-  const [roles, total] = await prisma.$transaction([
+  // Use Promise.all instead of $transaction for read-only queries (better for cloud DBs with latency)
+  const [roles, total] = await Promise.all([
     prisma.jobRole.findMany({
       where,
       select: {
@@ -293,7 +295,8 @@ export async function getJobRolesPaginated(
  * Get dashboard stats (total roles, candidates, pending reviews)
  */
 export async function getDashboardStats() {
-  const [totalRoles, totalCandidates, pendingReviews] = await prisma.$transaction([
+  // Use Promise.all instead of $transaction for read-only queries (better for cloud DBs with latency)
+  const [totalRoles, totalCandidates, pendingReviews] = await Promise.all([
     prisma.jobRole.count(),
     prisma.quiz.count(),
     // Pending reviews: completed quizzes (SUBMITTED/TERMINATED) with PENDING candidateStatus

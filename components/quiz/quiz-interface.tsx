@@ -30,15 +30,16 @@ interface QuizInterfaceProps {
   questions: Question[];
   quizToken: string; // Token for API calls
   initialVersion: number; // Initial version for optimistic locking
+  initialAnswers?: Record<string, number>; // Existing answers when resuming a quiz
   onSubmit: (version: number) => void; // Pass current version to submit handler
   onTimePerQuestionChange?: (questionId: string, time: number) => void;
   onQuestionChange?: (questionIndex: number) => void;
   onQuizEnded?: () => void; // Called when quiz ends (version conflict detected)
 }
 
-export function QuizInterface({ questions, quizToken, initialVersion, onSubmit, onTimePerQuestionChange, onQuestionChange, onQuizEnded }: QuizInterfaceProps) {
+export function QuizInterface({ questions, quizToken, initialVersion, initialAnswers, onSubmit, onTimePerQuestionChange, onQuestionChange, onQuizEnded }: QuizInterfaceProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number>>(initialAnswers ?? {});
   const questionStartTimesRef = useRef<Record<string, number>>({});
   const [questionTimeTaken, setQuestionTimeTaken] = useState<Record<string, number>>({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);

@@ -140,6 +140,7 @@ async function triggerEvaluation(quizId: string, resultId: string) {
   try {
     // Fetch quiz with all data needed for evaluation
     const quiz = await getQuizForEvaluation(quizId);
+    console.log("Starting evaluation for quiz:", quizId);
 
     if (!quiz) {
       throw new Error("Quiz not found during evaluation");

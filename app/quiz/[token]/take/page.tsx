@@ -6,7 +6,7 @@ import Timer from "@/components/quiz/timer";
 import { QuizInterface } from "@/components/quiz/quiz-interface";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Timer as TimerIcon, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useProctoring, type ProctoringEvent } from "@/hooks/use-proctoring";
 import { FullscreenModal } from "@/components/proctoring-warning";
@@ -28,6 +28,7 @@ interface QuizSession {
   remainingTime: number; // Remaining time in seconds
   version: number; // Version for optimistic locking
   alreadyStarted: boolean;
+  existingAnswers?: Record<string, number>; // Existing answers when resuming
 }
 
 export default function QuizTakePage() {
@@ -39,6 +40,7 @@ export default function QuizTakePage() {
   const [quizSession, setQuizSession] = useState<QuizSession | null>(null);
   const [currentVersion, setCurrentVersion] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [isTimedOut, setIsTimedOut] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [stopTimer, setStopTimer] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -96,6 +98,9 @@ export default function QuizTakePage() {
         const data = await response.json();
 
         if (!response.ok) {
+          if (data.error === "Quiz has timed out") {
+            setIsTimedOut(true);
+          }
           setError(data.error || "Failed to start quiz");
           setLoading(false);
           return;
@@ -249,6 +254,60 @@ export default function QuizTakePage() {
   }
 
   if (error) {
+    // Special UI for timed out quizzes
+    if (isTimedOut) {
+      return (
+        <div className="min-h-screen bg-background relative overflow-hidden">
+          {/* Subtle animated background */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-1/4 -left-32 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+            <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+          </div>
+
+          {/* Navbar */}
+          <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+            <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
+              <span className="font-pacifico text-2xl text-gradient-primary pb-1">Screenify</span>
+            </div>
+          </nav>
+
+          <div className="relative max-w-2xl mx-auto px-6 py-12 space-y-6">
+            {/* Main Status Card */}
+            <div className="p-8 rounded-2xl bg-card shadow-soft-lg border border-accent/20 relative overflow-hidden">
+              {/* Decorative corner accent */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-accent/10 to-transparent rounded-bl-full" />
+
+              <div className="text-center relative">
+                {/* Animated clock icon */}
+                <div className="mx-auto mb-6 h-24 w-24 rounded-full bg-gradient-to-br from-accent/20 to-primary/10 flex items-center justify-center relative">
+                  <div className="absolute inset-2 rounded-full bg-card shadow-inner" />
+                  <TimerIcon className="h-10 w-10 text-accent relative z-10" />
+                </div>
+
+                <h1 className="text-2xl font-bold text-foreground mb-3">
+                  Assessment Time Expired
+                </h1>
+                <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
+                  The time allocated for this assessment has passed. Unfortunately, the quiz can no longer be started or continued.
+                </p>
+              </div>
+            </div>
+
+            {/* Help Card */}
+            <div className="p-4 rounded-xl bg-muted/50 border border-border">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-accent shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">Need help?</span> Contact the recruiter directly.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Generic error UI
     return (
       <div className="min-h-screen bg-background">
         {/* Navbar */}
@@ -330,6 +389,7 @@ export default function QuizTakePage() {
             questions={quizSession.questions}
             quizToken={token}
             initialVersion={currentVersion}
+            initialAnswers={quizSession.existingAnswers}
             onSubmit={handleSubmit}
             onQuestionChange={setCurrentQuestionIndex}
             onQuizEnded={handleQuizEnded}

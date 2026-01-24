@@ -69,6 +69,12 @@ export async function getQuizForStart(token: string) {
           id: true,
         },
       },
+      answers: {
+        select: {
+          questionId: true,
+          answer: true,
+        },
+      },
     },
   });
 }

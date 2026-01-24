@@ -33,6 +33,7 @@ export async function POST(
         { status: 404 }
       );
     }
+    console.log("Starting quiz: ", quiz.id);
 
     // Get effective status (includes computed EXPIRED state)
     const effectiveStatus = getEffectiveQuizStatus({
@@ -75,6 +76,12 @@ export async function POST(
         duration: quiz.duration,
       });
 
+      // Convert existing answers to a map of questionId -> answer (as number)
+      const existingAnswers: Record<string, number> = {};
+      for (const answer of quiz.answers) {
+        existingAnswers[answer.questionId] = parseInt(answer.answer, 10);
+      }
+
       return NextResponse.json({
         success: true,
         quizId: quiz.id,
@@ -84,11 +91,13 @@ export async function POST(
         remainingTime,
         version: quiz.version,
         alreadyStarted: true,
+        existingAnswers,
       });
     }
 
     // Start the quiz - update status to IN_PROGRESS
     const updatedQuiz = await startQuiz(quiz.id);
+    console.log("Started quiz attempt: ", updatedQuiz.id);
 
     // Return quiz data with questions
     // Note: Questions are shuffled during quiz creation, so we return them as-is

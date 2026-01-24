@@ -20,6 +20,7 @@ export async function POST(
     const body = await request.json();
 
     const { type, timestamp } = body as ProctoringEventPayload;
+    console.log("Logging proctoring event: ", { type, timestamp });
 
     // Validate token
     if (!token || token.length < 10) {

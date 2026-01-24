@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Upload, Copy, CheckCircle2, AlertCircle } from "lucide-react";
 import { extractTextFromPDF, isValidPDF, formatFileSize } from "@/lib/pdf-extractor";
 import { toast } from "sonner";
+import { DEFAULT_QUIZ_EXPIRY_HOURS } from "@/lib/constants";
 
 interface AddCandidateModalProps {
   roleId: string;
@@ -25,6 +26,7 @@ export function AddCandidateModal({ roleId, onSuccess }: AddCandidateModalProps)
   const [candidateEmail, setCandidateEmail] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeError, setResumeError] = useState("");
+  const [expiryHours, setExpiryHours] = useState(DEFAULT_QUIZ_EXPIRY_HOURS);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,6 +78,7 @@ export function AddCandidateModal({ roleId, onSuccess }: AddCandidateModalProps)
           candidateName,
           candidateEmail,
           resumeText,
+          expiryHours,
         }),
       });
 
@@ -120,6 +123,7 @@ export function AddCandidateModal({ roleId, onSuccess }: AddCandidateModalProps)
     setCandidateEmail("");
     setResumeFile(null);
     setResumeError("");
+    setExpiryHours(DEFAULT_QUIZ_EXPIRY_HOURS);
     setQuizLink(null);
     setCopied(false);
   };
@@ -213,6 +217,23 @@ export function AddCandidateModal({ roleId, onSuccess }: AddCandidateModalProps)
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Link Expiry */}
+            <div className="space-y-2">
+              <Label htmlFor="expiryHours">Link Expiry (hours)</Label>
+              <Input
+                id="expiryHours"
+                type="number"
+                min={1}
+                max={168}
+                value={expiryHours}
+                onChange={(e) => setExpiryHours(Math.max(1, parseInt(e.target.value) || DEFAULT_QUIZ_EXPIRY_HOURS))}
+                disabled={loading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Quiz link will expire after this many hours (default: {DEFAULT_QUIZ_EXPIRY_HOURS})
+              </p>
             </div>
 
             {/* Submit Button */}

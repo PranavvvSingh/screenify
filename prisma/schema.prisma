@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// AUTH DOMAIN (Better Auth)
+// ============================================
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  recruiter Recruiter?
+
+  @@index([email])
+  @@map("users")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("accounts")
+}
+
+// Better Auth Session model
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Better Auth Verification model
+model Verification {
+  id         String    @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verifications")
+}
+
+
+// APPLICATION DOMAIN
+
+model Recruiter {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobRolesCreated JobRole[] @relation("RecruiterJobRoles")
+
+  @@index([userId])
+  @@map("recruiters")
+}
+
+
+model JobRole {
+  id             String   @id @default(cuid())
+  title          String
+  description    String?  @db.Text
+  jd             Json // JSONB: JDRequirements - { job_title, description, requirements[], required_skills[], preferred_skills[], experience: { min_years, max_years } }
+  baseQuestions  Json? // JSONB: Array of standard questions (70% of total) - reused for all candidates
+  totalQuestions Int      @default(10) // Total questions (5-25), maintains 70/30 split
+  recruiterId    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  recruiter Recruiter @relation("RecruiterJobRoles", fields: [recruiterId], references: [id], onDelete: Cascade)
+  quizzes   Quiz[]
+
+  @@index([recruiterId])
+  @@index([title])
+  @@map("job_roles")
+}
+
+model Quiz {
+  id              String          @id @default(cuid())
+  jobRoleId       String
+  candidateName   String
+  candidateEmail  String
+  token           String          @unique @default(cuid()) //
+  questions       Json // JSONB: [{ id, type: 'STANDARD' | 'RESUME_VERIFICATION', question, options: [], correctAnswer }]
+  duration        Int             @default(1200) // Duration in seconds (default 20 minutes)
+  candidateStatus CandidateStatus @default(PENDING) // Accept/Reject
+  createdAt       DateTime        @default(now())
+
+  status             QuizStatus       @default(PENDING)
+  expiresAt          DateTime?
+  startedAt          DateTime?
+  endedAt            DateTime?
+
+  proctoringEvents Json @default("[]") // Append-only array of { type, timestamp } events
+
+  version Int @default(0) // Optimistic locking for answer submission race conditions
+
+  jobRole JobRole      @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
+  answers QuizAnswer[]
+  result  QuizResult?
+
+  @@index([jobRoleId])
+  @@index([token])
+  @@index([candidateEmail])
+  @@index([candidateStatus])
+  @@index([status])
+  @@map("quizzes")
+}
+
+model QuizAnswer {
+  id          String   @id @default(cuid())
+  quizId      String
+  questionId  String 
+  answer      String
+  isCorrect   Boolean?
+  timeTaken   Int
+  submittedAt DateTime @default(now())
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, questionId])
+  @@index([quizId])
+  @@map("quiz_answers")
+}
+
+model QuizResult {
+  id     String @id @default(cuid())
+  quizId String @unique // One result per quiz
+
+  standardCorrect Int
+  standardTotal   Int
+
+  verificationCorrect Int
+  verificationTotal   Int
+
+  proctoringVerdict        ProctoringVerdict @default(CLEAN)
+  proctoringViolationCount Int               @default(0)
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_results")
+}
+
+enum QuizStatus {
+  PENDING     // Link created, not started
+  IN_PROGRESS // Candidate taking quiz
+  SUBMITTED   // Normal submission
+  TERMINATED  // Ended due to cheating
+  // Runtime-computed statuses:
+  // - EXPIRED: PENDING + expiresAt < now (link expired before starting)
+  // - TIMED_OUT: IN_PROGRESS + startedAt + duration < now (started but didn't submit in time)
+}
+
+enum ProctoringVerdict {
+  CLEAN      // No violations
+  SUSPICIOUS // Some violations 
+  CHEATING   // Excessive violations
+}
+
+enum CandidateStatus {
+  PENDING // Default state
+  SHORTLISTED 
+  REJECTED 
+}

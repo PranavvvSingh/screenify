@@ -10,12 +10,20 @@ const globalForPrisma = globalThis as unknown as {
 
 const connectionString = process.env.DATABASE_URL;
 
+// Check if custom CA certificate exists (local development)
+const caPath = path.join(process.cwd(), "certs/ca.pem");
+const caExists = fs.existsSync(caPath);
+
 const pool = new Pool({
   connectionString,
-  ssl: {
-    rejectUnauthorized: true,
-    ca: fs.readFileSync(path.join(process.cwd(), "certs/ca.pem")).toString(),
-  },
+  ssl: caExists
+    ? {
+        rejectUnauthorized: true,
+        ca: fs.readFileSync(caPath).toString(),
+      }
+    : {
+        rejectUnauthorized: false,
+      },
 });
 const adapter = new PrismaPg(pool);
 

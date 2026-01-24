@@ -10,20 +10,28 @@ const globalForPrisma = globalThis as unknown as {
 
 const connectionString = process.env.DATABASE_URL;
 
-// Check if custom CA certificate exists (local development)
+// Get CA certificate: prefer file (local dev), fall back to env var (Vercel)
 const caPath = path.join(process.cwd(), "certs/ca.pem");
 const caExists = fs.existsSync(caPath);
 
+function getCaCertificate(): string {
+  // Local development: read from file
+  if (caExists) {
+    return fs.readFileSync(caPath).toString();
+  }
+  // Production (Vercel): decode from base64 env var
+  if (process.env.DATABASE_CA_CERT) {
+    return Buffer.from(process.env.DATABASE_CA_CERT, "base64").toString("utf-8");
+  }
+  throw new Error("No CA certificate found. Set DATABASE_CA_CERT env var or provide certs/ca.pem");
+}
+
 const pool = new Pool({
   connectionString,
-  ssl: caExists
-    ? {
-        rejectUnauthorized: true,
-        ca: fs.readFileSync(caPath).toString(),
-      }
-    : {
-        rejectUnauthorized: false,
-      },
+  ssl: {
+    rejectUnauthorized: true,
+    ca: getCaCertificate(),
+  },
 });
 const adapter = new PrismaPg(pool);
 

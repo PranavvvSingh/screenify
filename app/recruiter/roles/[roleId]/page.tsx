@@ -7,6 +7,8 @@ import { JobDescriptionCollapsible } from "@/components/job-description-collapsi
 import { Users, CheckCircle, BarChart3, ArrowLeft } from "lucide-react";
 import { getJobRoleWithStats } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function RoleDetailPage({ params }: { params: Promise<{ roleId: string }> }) {
   const { roleId } = await params;
 

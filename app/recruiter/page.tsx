@@ -4,6 +4,8 @@ import Link from "next/link";
 import { getDashboardStats } from "@/lib/db";
 import { RolesList } from "@/components/roles-list";
 
+export const dynamic = "force-dynamic";
+
 export default async function RecruiterDashboard() {
   const stats = await getDashboardStats();
 

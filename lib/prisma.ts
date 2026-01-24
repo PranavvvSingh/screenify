@@ -34,7 +34,7 @@ const pool = new Pool({
   },
   // Connection pool settings optimized for serverless (Vercel) + Aiven cloud DB
   // Keep pool small since each serverless instance creates its own pool
-  max: 2, // Small pool per instance to avoid exceeding Aiven's connection limit
+  max: 1, // Minimum pool size - use Aiven connection pooling for better scaling
   idleTimeoutMillis: 10000, // Close idle connections quickly (10s)
   connectionTimeoutMillis: 10000, // Fail connection after 10s
 });

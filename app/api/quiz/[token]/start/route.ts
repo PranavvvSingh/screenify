@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getQuizForStart, startQuiz } from "@/lib/db";
-import { getEffectiveQuizStatus, getRemainingTime } from "@/lib/quiz-helpers";
+import { getEffectiveQuizStatus } from "@/lib/quiz-helpers";
 
 /**
  * POST /api/quiz/[token]/start
@@ -69,12 +69,9 @@ export async function POST(
 
     // Check if quiz has already been started (IN_PROGRESS)
     if (quiz.status === "IN_PROGRESS" && quiz.startedAt) {
-      // Quiz already started, return existing session with remaining time
-      const remainingTime = getRemainingTime({
-        status: quiz.status,
-        startedAt: quiz.startedAt,
-        duration: quiz.duration,
-      });
+      // Quiz already started, return existing session with absolute end time
+      // Using absolute timestamp ensures client and server always agree on when quiz ends
+      const endTime = new Date(quiz.startedAt.getTime() + quiz.duration * 1000).toISOString();
 
       // Convert existing answers to a map of questionId -> answer (as number)
       const existingAnswers: Record<string, number> = {};
@@ -88,7 +85,7 @@ export async function POST(
         questions: quiz.questions,
         duration: quiz.duration,
         startedAt: quiz.startedAt,
-        remainingTime,
+        endTime,
         version: quiz.version,
         alreadyStarted: true,
         existingAnswers,
@@ -99,6 +96,9 @@ export async function POST(
     const updatedQuiz = await startQuiz(quiz.id);
     console.log("Started quiz attempt: ", updatedQuiz.id);
 
+    // Calculate absolute end time for client-server synchronization
+    const endTime = new Date(updatedQuiz.startedAt!.getTime() + quiz.duration * 1000).toISOString();
+
     // Return quiz data with questions
     // Note: Questions are shuffled during quiz creation, so we return them as-is
     return NextResponse.json({
@@ -107,7 +107,7 @@ export async function POST(
       questions: quiz.questions,
       duration: quiz.duration,
       startedAt: updatedQuiz.startedAt,
-      remainingTime: quiz.duration, // Full duration since just started
+      endTime,
       version: updatedQuiz.version,
       alreadyStarted: false,
     });

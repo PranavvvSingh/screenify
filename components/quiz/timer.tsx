@@ -6,22 +6,26 @@ import { RxLapTimer as TimerIcon } from "react-icons/rx";
 import { cn } from "@/lib/utils";
 
 interface TimerProps {
-  numOfQuestions: number;
+  endTime: string; // ISO timestamp when quiz ends - ensures client/server sync
   stopTimer: boolean;
   onTimeUp: () => void;
   className?: string;
-  timePerQuestion?: number; // seconds per question, default 60 (1 minute)
 }
 
 const Timer = ({
-  numOfQuestions,
+  endTime,
   stopTimer,
   onTimeUp,
   className,
-  timePerQuestion = 60,
 }: TimerProps) => {
-  const initialTime = timePerQuestion * numOfQuestions;
-  const [time, setTime] = useState(initialTime);
+  // Calculate remaining time from absolute end time
+  // This ensures client and server always agree on when time is up
+  const calculateRemainingTime = () => {
+    const remaining = Math.floor((new Date(endTime).getTime() - Date.now()) / 1000);
+    return Math.max(0, remaining);
+  };
+
+  const [time, setTime] = useState(calculateRemainingTime);
   const timeUpCalledRef = useRef(false);
   const onTimeUpRef = useRef(onTimeUp);
 
@@ -34,17 +38,17 @@ const Timer = ({
     if (stopTimer) return;
 
     const intervalId = setInterval(() => {
-      setTime((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(intervalId);
-          return 0;
-        }
-        return prevTime - 1;
-      });
+      // Recalculate from endTime each tick to stay synchronized
+      const remaining = calculateRemainingTime();
+      setTime(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(intervalId);
+      }
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [stopTimer]);
+  }, [stopTimer, endTime]);
 
   // Handle time up in a separate effect to avoid setState during render
   useEffect(() => {

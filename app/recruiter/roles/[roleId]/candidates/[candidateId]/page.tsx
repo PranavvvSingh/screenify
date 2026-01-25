@@ -217,66 +217,61 @@ export default function CandidateDetailPage() {
 						<h1 className='text-3xl font-bold text-foreground'>{quiz.candidateName}</h1>
 					</div>
 				</div>
-				<div className='flex gap-3'>
+				{/* Decision Buttons - Unified Toggle Group */}
+				<div className='inline-flex items-center rounded-xl border border-border/60 bg-muted/30 p-1 gap-1'>
 					<Button
-						variant="outline"
-						disabled={updatingStatus || quiz.candidateStatus === "SHORTLISTED"}
+						variant="ghost"
+						disabled={updatingStatus}
 						onClick={() => updateCandidateStatus("SHORTLISTED")}
 						className={`
-							px-5 py-2.5 min-w-[130px]
-							border-2 rounded-lg
-							font-medium
-							transition-all duration-300 ease-out
+							h-9 px-4 rounded-lg
+							font-medium text-sm
+							transition-all duration-200
 							${quiz.candidateStatus === "SHORTLISTED"
-								? 'border-emerald-500/40 bg-gradient-to-br from-emerald-50 via-emerald-50/80 to-teal-50/60 text-emerald-700'
-								: 'border-emerald-200 text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50/50'
+								? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm'
+								: 'text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50'
 							}
-							disabled:opacity-60 disabled:cursor-not-allowed
+							disabled:opacity-50 disabled:cursor-not-allowed
 						`}
 					>
-						<span className="inline-flex items-center gap-2">
-							{quiz.candidateStatus === "SHORTLISTED" && (
-								<svg
-									className="w-4 h-4"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-								</svg>
-							)}
-							{quiz.candidateStatus === "SHORTLISTED" ? "Shortlisted" : "Shortlist"}
+						<span className="inline-flex items-center gap-1.5">
+							<svg
+								className={`w-4 h-4 transition-transform duration-200 ${quiz.candidateStatus === "SHORTLISTED" ? 'scale-100' : 'scale-90'}`}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+							</svg>
+							Shortlist
 						</span>
 					</Button>
 
 					<Button
-						variant="outline"
-						disabled={updatingStatus || quiz.candidateStatus === "REJECTED"}
+						variant="ghost"
+						disabled={updatingStatus}
 						onClick={() => updateCandidateStatus("REJECTED")}
 						className={`
-							px-5 py-2.5 min-w-[130px]
-							border-2 rounded-lg
-							font-medium
-							transition-all duration-300 ease-out
+							h-9 px-4 rounded-lg
+							font-medium text-sm
+							transition-all duration-200
 							${quiz.candidateStatus === "REJECTED"
-								? 'border-rose-500/40 bg-gradient-to-br from-rose-50 via-rose-50/80 to-red-50/60 text-rose-700'
-								: 'border-rose-200 text-rose-600 hover:border-rose-400 hover:bg-rose-50/50'
+								? 'bg-red-500 text-white hover:bg-red-600 shadow-sm'
+								: 'text-muted-foreground hover:text-red-600 hover:bg-red-50'
 							}
-							disabled:opacity-60 disabled:cursor-not-allowed
+							disabled:opacity-50 disabled:cursor-not-allowed
 						`}
 					>
-						<span className="inline-flex items-center gap-2">
-							{quiz.candidateStatus === "REJECTED" && (
-								<svg
-									className="w-4 h-4"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-								</svg>
-							)}
-							{quiz.candidateStatus === "REJECTED" ? "Rejected" : "Reject"}
+						<span className="inline-flex items-center gap-1.5">
+							<svg
+								className={`w-4 h-4 transition-transform duration-200 ${quiz.candidateStatus === "REJECTED" ? 'scale-100' : 'scale-90'}`}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+							</svg>
+							Reject
 						</span>
 					</Button>
 				</div>

@@ -25,7 +25,7 @@ interface QuizSession {
   questions: Question[];
   duration: number; // Duration in seconds
   startedAt: string;
-  remainingTime: number; // Remaining time in seconds
+  endTime: string; // Absolute end time (ISO timestamp) for client-server sync
   version: number; // Version for optimistic locking
   alreadyStarted: boolean;
   existingAnswers?: Record<string, number>; // Existing answers when resuming
@@ -372,10 +372,9 @@ export default function QuizTakePage() {
                 </button>
               )}
               <Timer
-                numOfQuestions={quizSession.questions.length}
+                endTime={quizSession.endTime}
                 stopTimer={stopTimer}
                 onTimeUp={handleTimeUp}
-                timePerQuestion={Math.floor(quizSession.remainingTime / quizSession.questions.length)}
               />
             </div>
           </div>
